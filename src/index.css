@@ -1,0 +1,718 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Georgia:wght@400;700&display=swap');
+
+:root {
+  --gold: #f5c842;
+  --gold-light: #ffe88a;
+  --gold-dark: #c9971f;
+  --silver: #c0c0c0;
+  --silver-dark: #888;
+  --bronze: #cd7f32;
+  --bronze-dark: #a0622a;
+  --wood-dark: #1e0d05;
+  --wood-mid: #3a1a08;
+  --wood-light: #5c2d10;
+  --wood-highlight: #7a4020;
+  --felt: #0b1f0b;
+  --felt-light: #122612;
+  --bg: #120a04;
+  --surface: #1e0d05;
+  --surface2: #2a1208;
+  --text: #f0e8d8;
+  --muted: #9a8060;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(
+      92deg,
+      transparent 0px, transparent 3px,
+      rgba(92,45,16,0.08) 3px, rgba(92,45,16,0.08) 4px
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px, transparent 18px,
+      rgba(30,13,5,0.4) 18px, rgba(30,13,5,0.4) 19px
+    );
+  color: var(--text);
+  font-family: Georgia, 'Times New Roman', serif;
+  min-height: 100vh;
+}
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 60px 20px 50px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%),
+    repeating-linear-gradient(
+      88deg,
+      transparent 0px, transparent 2px,
+      rgba(92,45,16,0.15) 2px, rgba(92,45,16,0.15) 3px
+    ),
+    linear-gradient(180deg, #2a0e02 0%, #3d1a08 50%, #2a0e02 100%);
+  border-bottom: 4px solid var(--wood-highlight);
+  border-top: none;
+  box-shadow:
+    0 4px 0 #7a4020,
+    0 5px 0 #3a1a08,
+    0 6px 20px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(255,220,150,0.1);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(245,200,66,0.6), transparent);
+}
+.trophy-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px rgba(245,200,66,0.6));
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 20px rgba(245,200,66,0.6)); }
+  50% { filter: drop-shadow(0 0 35px rgba(245,200,66,0.9)); }
+}
+h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.8rem, 5vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  text-shadow:
+    0 1px 0 #fff8d0,
+    0 2px 0 #c9971f,
+    0 3px 0 #a0750f,
+    0 4px 8px rgba(0,0,0,0.8);
+  margin-bottom: 10px;
+}
+.subtitle {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: clamp(0.85rem, 2vw, 1.05rem);
+  color: var(--muted);
+  letter-spacing: 0.12em;
+}
+
+/* ── NAV ── */
+.topnav {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-top: 28px;
+  position: relative;
+  z-index: 1;
+}
+.navlink {
+  font-family: 'Cinzel', serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  color: #c9a96e;
+  padding: 10px 24px;
+  background: linear-gradient(180deg, #4a2010 0%, #2e1006 100%);
+  border: 2px solid #7a4020;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  margin-right: 3px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,150,0.15),
+    inset 0 -2px 4px rgba(0,0,0,0.4);
+  transition: all 0.15s;
+}
+.navlink:hover {
+  color: var(--gold);
+  background: linear-gradient(180deg, #6a3018 0%, #4a1e08 100%);
+}
+.navlink.active {
+  color: var(--gold);
+  background: linear-gradient(180deg, #7a4020 0%, #5c2d10 100%);
+  border-color: #a06030;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,150,0.25),
+    0 2px 0 #5c2d10;
+}
+
+/* ── LOADING / ERROR ── */
+#loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+  font-size: 1rem;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(245,200,66,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TROPHY CASE ── */
+#trophy-case {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 20px 0;
+}
+.tc-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 #fff8c0;
+}
+.tc-sub {
+  text-align: center;
+  color: var(--muted);
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+/* The physical cabinet wrapper */
+.tc-cabinet {
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(92,45,16,0.22) 0px, rgba(92,45,16,0.22) 1px,
+      transparent 1px, transparent 8px
+    ),
+    linear-gradient(180deg, #4a2010 0%, #3a1a08 20%, #2e1006 80%, #4a2010 100%);
+  border: 6px solid var(--wood-highlight);
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 2px #7a4020,
+    0 0 0 4px #3a1a08,
+    0 0 0 6px #5c2d10,
+    0 12px 40px rgba(0,0,0,0.8),
+    inset 0 2px 0 rgba(255,220,150,0.2),
+    inset 0 -2px 0 rgba(0,0,0,0.6);
+  padding: 18px 18px 12px;
+}
+
+/* Spotlight bar at top of cabinet */
+.tc-cabinet::before {
+  content: '';
+  position: absolute;
+  top: -2px; left: 10%; right: 10%;
+  height: 6px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,240,180,0.6) 20%,
+    rgba(255,240,180,0.9) 35%,
+    rgba(255,255,200,1) 50%,
+    rgba(255,240,180,0.9) 65%,
+    rgba(255,240,180,0.6) 80%,
+    transparent 100%
+  );
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 16px rgba(255,240,180,0.4), 0 0 8px rgba(255,240,180,0.3);
+}
+
+/* Felt interior */
+.tc-interior {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,200,0.06) 0%, transparent 60%),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0px, transparent 2px,
+      rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+    ),
+    linear-gradient(180deg, #122612 0%, #0b1f0b 40%, #091a09 100%);
+  border: 3px solid #0a1a0a;
+  border-radius: 2px;
+  box-shadow:
+    inset 0 4px 20px rgba(0,0,0,0.7),
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+  overflow: hidden;
+}
+
+.tc-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tc-table thead th {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #8faf8f;
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.tc-table thead th.num { text-align: center; }
+.tc-table tbody td {
+  padding: 13px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.95rem;
+  vertical-align: middle;
+  color: var(--text);
+}
+.tc-table tbody tr:last-child td { border-bottom: none; }
+.tc-table tbody tr:hover { background: rgba(255,220,150,0.04); }
+.tc-manager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+.tc-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--surface2); border: 2px solid #5c3010; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+.tc-avatar.avatar-fallback { font-size: 0.9rem; }
+.tc-count { text-align: center; font-weight: 700; font-size: 1.05rem; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+.tc-count.zero { color: var(--muted); opacity: 0.4; }
+.tc-rank-medal { font-size: 1.1rem; }
+
+.tc-cobweb-row td { padding: 10px 18px; border-top: 1px dashed rgba(255,255,255,0.06); }
+.tc-cobweb-line {
+  display: flex; align-items: center; gap: 10px; justify-content: center;
+  opacity: 0.45;
+}
+.cobweb-icon { font-size: 1.1rem; flex-shrink: 0; }
+.cobweb-names {
+  font-family: Georgia, serif; font-style: italic;
+  font-size: 0.82rem; color: var(--muted);
+  white-space: normal;
+}
+
+@media (max-width: 600px) {
+  .tc-avatar { width: 28px; height: 28px; }
+  .tc-manager { gap: 8px; }
+  .tc-cabinet { padding: 12px 12px 8px; }
+
+  /* Must reset the table/tbody display before flex can work on rows */
+  .tc-table,
+  .tc-table tbody { display: block; width: 100%; }
+  .tc-table thead { display: none; }
+
+  /* Single-line row: [avatar name · · · 🥇n 🥈n 🥉n total] */
+  .tc-table tbody tr {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: 100%;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 9px 4px;
+    gap: 6px;
+  }
+  .tc-table tbody tr:last-child { border-bottom: none; }
+  .tc-table tbody td {
+    display: block;
+    border-bottom: none !important;
+    padding: 0;
+  }
+  /* Manager takes all remaining space, truncate if needed */
+  .tc-table tbody td:first-child {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .tc-table tbody td:first-child .tc-manager span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Each medal count: narrow fixed width */
+  .tc-table tbody td.tc-count {
+    flex: 0 0 28px;
+    text-align: center;
+    font-size: 0.82rem;
+    padding: 0;
+    white-space: nowrap;
+  }
+  /* Cobweb row spans full width */
+  .tc-cobweb-row td {
+    flex: 0 0 100% !important;
+    padding: 10px 4px !important;
+  }
+}
+
+/* ── SEASONS GRID ── */
+#seasons {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 20px 100px;
+}
+
+.season-card {
+  background:
+    repeating-linear-gradient(
+      91deg,
+      transparent 0px, transparent 4px,
+      rgba(92,45,16,0.07) 4px, rgba(92,45,16,0.07) 5px
+    ),
+    linear-gradient(160deg, #2a1208 0%, #1e0d05 100%);
+  border: 4px solid var(--wood-highlight);
+  border-radius: 4px;
+  padding: 36px 36px 44px;
+  margin-bottom: 48px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px #3a1a08,
+    0 0 0 3px #5c2d10,
+    0 8px 32px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,220,150,0.08);
+}
+.season-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(245,200,66,0.5), transparent);
+}
+
+.season-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(92,45,16,0.6);
+  box-shadow: 0 1px 0 rgba(255,220,150,0.06);
+}
+.season-year {
+  font-family: 'Cinzel', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 #fff8c0;
+}
+.season-name {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.season-badge {
+  background: linear-gradient(135deg, #3a2000, #2a1500);
+  border: 2px solid rgba(245,200,66,0.5);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 3px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,220,150,0.15), 0 2px 4px rgba(0,0,0,0.5);
+}
+.season-badge.current {
+  background: linear-gradient(135deg, #001a00, #002500);
+  border-color: rgba(100,200,100,0.5);
+  color: #7add7a;
+}
+
+/* ── PODIUM ── */
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 16px;
+}
+
+.podium-place {
+  flex: 1;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.place-card {
+  width: 100%;
+  border-radius: 4px;
+  padding: 24px 18px 22px;
+  position: relative;
+  transition: transform 0.2s;
+}
+.place-card:hover { transform: translateY(-3px); }
+
+/* Gold */
+.place-1 .place-card {
+  background: linear-gradient(160deg, #2e1e00 0%, #1a1200 100%);
+  border: 3px solid #c9971f;
+  box-shadow:
+    0 0 0 1px #7a5c10,
+    0 6px 24px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,220,100,0.2),
+    inset 0 0 20px rgba(245,200,66,0.06);
+}
+/* Silver */
+.place-2 .place-card {
+  background: linear-gradient(160deg, #1a1a1e 0%, #111114 100%);
+  border: 3px solid #888;
+  box-shadow:
+    0 0 0 1px #555,
+    0 6px 20px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(220,220,220,0.15),
+    inset 0 0 16px rgba(192,192,192,0.04);
+}
+/* Bronze */
+.place-3 .place-card {
+  background: linear-gradient(160deg, #1e1004 0%, #120a00 100%);
+  border: 3px solid #a0622a;
+  box-shadow:
+    0 0 0 1px #6b3d18,
+    0 6px 20px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(205,127,50,0.15),
+    inset 0 0 16px rgba(205,127,50,0.04);
+}
+
+.medal {
+  font-size: 2.8rem;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+
+.lombardi {
+  height: 78px;
+  width: auto;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 3px 10px rgba(245,200,66,0.45));
+  animation: trophy-float 3.5s ease-in-out infinite;
+}
+@keyframes trophy-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.avatar-wrap { margin-bottom: 12px; }
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface2);
+}
+.place-1 .avatar {
+  width: 76px; height: 76px;
+  border: 3px solid var(--gold);
+  box-shadow: 0 0 18px rgba(245,200,66,0.4), 0 3px 8px rgba(0,0,0,0.6);
+}
+.place-2 .avatar { border: 3px solid var(--silver); box-shadow: 0 0 12px rgba(192,192,192,0.25), 0 3px 8px rgba(0,0,0,0.6); }
+.place-3 .avatar { border: 3px solid var(--bronze); box-shadow: 0 0 12px rgba(205,127,50,0.25), 0 3px 8px rgba(0,0,0,0.6); }
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--text);
+}
+
+.place-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+.place-1 .place-label { color: var(--gold); }
+.place-2 .place-label { color: var(--silver); }
+.place-3 .place-label { color: var(--bronze); }
+
+.team-name {
+  font-family: Georgia, serif;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 6px;
+  color: #f8f0e0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+.place-1 .team-name { font-size: 1.1rem; }
+
+.manager-name {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Podium base bars — carved wood steps */
+.podium-bar {
+  width: 100%;
+  margin-top: 0;
+}
+.place-1 .podium-bar {
+  height: 80px;
+  background: linear-gradient(180deg, #4a3000 0%, #2e1e00 100%);
+  border: 2px solid #c9971f;
+  border-top: none;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4);
+}
+.place-2 .podium-bar {
+  height: 54px;
+  background: linear-gradient(180deg, #2a2a2e 0%, #1a1a1e 100%);
+  border: 2px solid #888;
+  border-top: none;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.4);
+}
+.place-3 .podium-bar {
+  height: 36px;
+  background: linear-gradient(180deg, #2a1a08 0%, #1a0e04 100%);
+  border: 2px solid #a0622a;
+  border-top: none;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.4);
+}
+
+/* ── MVP ── */
+.mvp {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mvp-row { display:flex; align-items:center; gap:10px; margin-top:4px; }
+.mvp-avatar {
+  width: 46px; height: 46px; border-radius: 4px; object-fit: cover;
+  background: var(--surface2); flex-shrink: 0;
+  border: 2px solid rgba(245,200,66,0.3);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+.place-2 .mvp-avatar { border-color: rgba(192,192,192,0.3); }
+.place-3 .mvp-avatar { border-color: rgba(205,127,50,0.3); }
+.mvp-info { display:flex; flex-direction:column; gap:2px; min-width:0; }
+
+.mvp-tag {
+  font-family: 'Cinzel', serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 700;
+  margin-bottom: 2px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+.place-2 .mvp-tag { color: var(--silver); }
+.place-3 .mvp-tag { color: var(--bronze); }
+.mvp-name { font-family: Georgia, serif; font-size: 0.9rem; font-weight: 700; color: #f8f0e0; }
+.mvp-meta { font-family: Georgia, serif; font-style: italic; font-size: 0.72rem; color: var(--muted); }
+
+/* ── SEASON STORY — newspaper-style inset ── */
+.season-story {
+  margin-top: 36px;
+  background:
+    repeating-linear-gradient(
+      91deg,
+      transparent 0px, transparent 3px,
+      rgba(92,45,16,0.06) 3px, rgba(92,45,16,0.06) 4px
+    ),
+    linear-gradient(160deg, #160800 0%, #0e0500 100%);
+  border: 3px solid #5c2d10;
+  border-radius: 2px;
+  padding: 22px 26px;
+  box-shadow:
+    0 0 0 1px #3a1a08,
+    inset 0 1px 0 rgba(255,220,150,0.06),
+    inset 0 0 20px rgba(0,0,0,0.4);
+}
+.story-head {
+  font-family: 'Cinzel', serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(92,45,16,0.6);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+.story-body {
+  font-family: Georgia, serif;
+  font-size: 0.94rem;
+  line-height: 1.75;
+  color: #d8c8a8;
+}
+.story-body b { color: var(--gold-light); font-weight: 700; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  /* Nav: wrap on small screens */
+  .topnav { flex-wrap: wrap; gap: 4px; margin-top: 20px; }
+  .navlink {
+    border-radius: 6px;
+    border: 2px solid #7a4020;
+    margin-right: 0;
+    padding: 10px 18px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .season-story { padding: 16px 18px; }
+  .story-body { font-size: 0.88rem; }
+  .season-card { padding: 20px 14px 28px; }
+
+  /* Podium: stack vertically 1st / 2nd / 3rd instead of side-by-side */
+  .podium {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 0;
+  }
+  .podium-place {
+    max-width: 100%;
+    width: 100%;
+  }
+  /* Re-order so champion is on top */
+  .place-1 { order: 1; }
+  .place-2 { order: 2; }
+  .place-3 { order: 3; }
+  /* Podium base bars look odd when stacked; hide them */
+  .podium-bar { display: none; }
+
+  .place-card { padding: 18px 14px 16px; }
+  .team-name { font-size: 0.9rem; }
+  .medal { font-size: 2rem; }
+  .lombardi { height: 60px; }
+  .avatar { width: 56px; height: 56px; }
+  .place-1 .avatar { width: 64px; height: 64px; }
+
+  /* MVP row: allow text to wrap */
+  .mvp-row { flex-wrap: wrap; }
+  .mvp-info { min-width: 0; flex: 1; }
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  border-top: 3px solid #3a1a08;
+  background: linear-gradient(180deg, #0e0500 0%, #080300 100%);
+  box-shadow: inset 0 2px 0 rgba(92,45,16,0.4);
+}
+footer a {
+  color: var(--gold);
+  text-decoration: none;
+}
