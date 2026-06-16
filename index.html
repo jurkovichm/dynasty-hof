@@ -299,13 +299,54 @@
     }
 
     @media (max-width: 600px) {
-      .tc-table tbody td, .tc-table thead th { padding: 10px 8px; font-size: 0.82rem; }
       .tc-avatar { width: 28px; height: 28px; }
       .tc-manager { gap: 8px; }
-      /* Allow trophy table to scroll horizontally instead of squishing */
       .tc-cabinet { padding: 12px 12px 8px; }
-      .tc-interior { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .tc-table { min-width: 340px; }
+
+      /* Stack each row as a card: manager full-width, medals in a flex row below */
+      .tc-table thead { display: none; }
+      .tc-table tbody tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 10px 4px;
+      }
+      .tc-table tbody tr:last-child { border-bottom: none; }
+      .tc-table tbody td {
+        display: block;
+        border-bottom: none !important;
+        padding: 0;
+      }
+      /* Manager row spans full width */
+      .tc-table tbody td:first-child {
+        flex: 0 0 100%;
+        padding-bottom: 8px;
+      }
+      /* Medal/total counts share equal space in one row */
+      .tc-table tbody td.tc-count {
+        flex: 1;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        font-size: 0.9rem;
+        padding: 2px 0;
+      }
+      .tc-table tbody td.tc-count::before {
+        content: attr(data-label);
+        font-family: 'Cinzel', serif;
+        font-size: 0.55rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      /* Cobweb row stays full-width */
+      .tc-cobweb-row td {
+        flex: 0 0 100% !important;
+        padding: 10px 8px !important;
+      }
     }
 
     /* ── SEASONS GRID ── */
@@ -973,10 +1014,10 @@
       return `
         <tr>
           <td><div class="tc-manager">${av}<span>@${escHtml(r.manager)}</span></div></td>
-          <td class="tc-count ${r.g ? '' : 'zero'}">${r.g ? '🥇 ' + r.g : '–'}</td>
-          <td class="tc-count ${r.s ? '' : 'zero'}">${r.s ? '🥈 ' + r.s : '–'}</td>
-          <td class="tc-count ${r.b ? '' : 'zero'}">${r.b ? '🥉 ' + r.b : '–'}</td>
-          <td class="tc-count">${total}</td>
+          <td class="tc-count ${r.g ? '' : 'zero'}" data-label="Gold">${r.g ? '🥇 ' + r.g : '–'}</td>
+          <td class="tc-count ${r.s ? '' : 'zero'}" data-label="Silver">${r.s ? '🥈 ' + r.s : '–'}</td>
+          <td class="tc-count ${r.b ? '' : 'zero'}" data-label="Bronze">${r.b ? '🥉 ' + r.b : '–'}</td>
+          <td class="tc-count" data-label="Total">${total}</td>
         </tr>`;
     });
 
