@@ -1,8 +1,7 @@
 import Avatar from './Avatar'
-import LombardiTrophy from './LombardiTrophy'
-import { MEDAL, PLACE_LABEL, SEASON_DATA } from '../data/seasonData'
+import { SEASON_DATA } from '../data/seasonData'
 
-function MvpSection({ leagueId, rosterId, place }) {
+function MvpSection({ leagueId, rosterId }) {
   const data = SEASON_DATA[leagueId]
   const mvp = data && data.mvps ? data.mvps[String(rosterId)] : null
   if (!mvp) return null
@@ -10,8 +9,8 @@ function MvpSection({ leagueId, rosterId, place }) {
   const thumb = mvp.pid ? `https://sleepercdn.com/content/nfl/players/thumb/${mvp.pid}.jpg` : null
 
   return (
-    <div className="mvp">
-      <span className="mvp-tag">★ Team MVP</span>
+    <div className="mvp-section">
+      <p className="section-label">Team MVP</p>
       <div className="mvp-row">
         {thumb && (
           <img
@@ -22,9 +21,9 @@ function MvpSection({ leagueId, rosterId, place }) {
             onError={e => { e.target.style.display = 'none' }}
           />
         )}
-        <div className="mvp-info">
-          <span className="mvp-name">{mvp.name}</span>
-          <span className="mvp-meta">{mvp.pos} · {mvp.team} · {mvp.pts.toFixed(1)} pts</span>
+        <div>
+          <div className="mvp-name">{mvp.name}</div>
+          <div className="mvp-stat">{mvp.pos} · {mvp.team} · {mvp.pts.toFixed(1)} pts</div>
         </div>
       </div>
     </div>
@@ -34,32 +33,19 @@ function MvpSection({ leagueId, rosterId, place }) {
 // Visual display order in the podium: [place-2, place-1, place-3]
 // place prop is 1/2/3 (actual rank), p is the player data
 export default function PodiumPlace({ place, p, leagueId }) {
-  const cssClass = `place-${place}`
-
-  // For the center (1st place), show LombardiTrophy; for others show medal emoji
-  const medalEl = place === 1
-    ? <div className="medal"><LombardiTrophy /></div>
-    : <div className="medal">{MEDAL[place - 1]}</div>
-
-  const label = PLACE_LABEL[place - 1]
+  const placeLabel = ['Champion', 'Runner-Up', 'Third Place'][place - 1]
 
   if (!p) {
-    return <div className={`podium-place ${cssClass}`}></div>
+    return <div className={`place-card place-${place}`}></div>
   }
 
   return (
-    <div className={`podium-place ${cssClass}`}>
-      <div className="place-card">
-        {medalEl}
-        <div className="avatar-wrap">
-          <Avatar url={p.avatar} name={p.teamName} className="avatar" />
-        </div>
-        <div className="place-label">{label}</div>
-        <div className="team-name">{p.teamName}</div>
-        <div className="manager-name">@{p.manager}</div>
-        <MvpSection leagueId={leagueId} rosterId={p.rosterId} place={place} />
-      </div>
-      <div className="podium-bar"></div>
+    <div className={`place-card place-${place}`}>
+      <div className="place-rank">{placeLabel}</div>
+      <Avatar url={p.avatar} name={p.teamName} className="podium-avatar" />
+      <div className="podium-team">{p.teamName}</div>
+      <div className="podium-manager">@{p.manager}</div>
+      <MvpSection leagueId={leagueId} rosterId={p.rosterId} />
     </div>
   )
 }

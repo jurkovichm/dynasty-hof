@@ -1,9 +1,8 @@
 export default function Hero() {
   return (
-    <div className="hero">
-      <div className="trophy-icon">🏆</div>
+    <header className="hero">
       <h1>Dynasty Hall of Fame</h1>
-      <p className="subtitle">The Immortalized Podium Finishers</p>
-    </div>
+      <p className="subtitle">Immortalized Podium Finishers</p>
+    </header>
   )
 }

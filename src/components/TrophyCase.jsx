@@ -35,59 +35,48 @@ export default function TrophyCase({ seasons }) {
   const zeroTrophy = [...allManagerNames].filter(m => !tally[m])
 
   return (
-    <div id="trophy-case">
-      <div className="tc-title">🏛️ Trophy Case</div>
-      <div className="tc-sub">
-        All-Time Podium Finishes · {completedCount} Season{completedCount === 1 ? '' : 's'}
-      </div>
-      <div className="tc-cabinet">
-        <div className="tc-interior">
-          <table className="tc-table">
-            <thead>
-              <tr>
-                <th>Manager</th>
-                <th className="num">Gold</th>
-                <th className="num">Silver</th>
-                <th className="num">Bronze</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(r => (
-                <tr key={r.manager}>
-                  <td>
-                    <div className="tc-manager">
-                      <Avatar url={r.avatar} name={r.manager} className="tc-avatar" />
-                      <span>@{r.manager}</span>
-                    </div>
-                  </td>
-                  <td className={`tc-count${r.g ? '' : ' zero'}`}>
-                    {r.g ? `🥇 ${r.g}` : '–'}
-                  </td>
-                  <td className={`tc-count${r.s ? '' : ' zero'}`}>
-                    {r.s ? `🥈 ${r.s}` : '–'}
-                  </td>
-                  <td className={`tc-count${r.b ? '' : ' zero'}`}>
-                    {r.b ? `🥉 ${r.b}` : '–'}
-                  </td>
-                </tr>
-              ))}
-              {zeroTrophy.length > 0 && (
-                <tr className="tc-cobweb-row">
-                  <td colSpan="4">
-                    <div className="tc-cobweb-line">
-                      <span className="cobweb-icon">🕸️</span>
-                      <span className="cobweb-names">
-                        {zeroTrophy.map(m => `@${m}`).join(', ')}
-                      </span>
-                      <span className="cobweb-icon">🕸️</span>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <section className="trophy-case">
+      <p className="section-label">Trophy Case · {completedCount} Season{completedCount === 1 ? '' : 's'}</p>
+      <table className="tc-table">
+        <thead>
+          <tr>
+            <th>Manager</th>
+            <th>Gold</th>
+            <th>Silver</th>
+            <th>Bronze</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.manager}>
+              <td>
+                <div className="tc-team">
+                  <Avatar url={r.avatar} name={r.manager} className="tc-avatar" />
+                  <div>
+                    <div className="tc-name">@{r.manager}</div>
+                  </div>
+                </div>
+              </td>
+              <td className={r.g ? 'tc-gold' : 'zero'}>
+                {r.g || '–'}
+              </td>
+              <td className={r.s ? 'tc-silver' : 'zero'}>
+                {r.s || '–'}
+              </td>
+              <td className={r.b ? 'tc-bronze' : 'zero'}>
+                {r.b || '–'}
+              </td>
+            </tr>
+          ))}
+          {zeroTrophy.length > 0 && (
+            <tr>
+              <td colSpan="4" style={{ color: 'var(--muted)', fontSize: '0.8rem', paddingTop: '16px' }}>
+                No podium finishes: {zeroTrophy.map(m => `@${m}`).join(', ')}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </section>
   )
 }

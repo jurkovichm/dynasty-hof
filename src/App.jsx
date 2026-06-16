@@ -44,32 +44,34 @@ export default function App() {
     <>
       <Hero />
 
-      {loading && (
-        <div id="loading">
-          <div className="spinner" />
-          Loading league history…
-        </div>
-      )}
+      <main className="app-main">
+        {loading && (
+          <div id="loading">
+            <div className="spinner" />
+            Loading league history…
+          </div>
+        )}
 
-      {error && (
-        <div id="loading">
-          <div style={{ color: '#ff6060' }}>Error loading league data: {error}</div>
-        </div>
-      )}
+        {error && (
+          <div id="loading">
+            <div style={{ color: '#ff6060' }}>Error loading league data: {error}</div>
+          </div>
+        )}
 
-      {seasons.length > 0 && (
-        <TrophyCase seasons={seasons} />
-      )}
+        {seasons.length > 0 && (
+          <TrophyCase seasons={seasons} />
+        )}
 
-      {seasons.length > 0 && (
-        <div id="seasons">
-          {seasons.map(({ league, podium }) => (
-            <SeasonCard key={league.league_id} league={league} podium={podium} />
-          ))}
-        </div>
-      )}
+        {seasons.length > 0 && (
+          <div className="seasons">
+            {seasons.map(({ league, podium }) => (
+              <SeasonCard key={league.league_id} league={league} podium={podium} />
+            ))}
+          </div>
+        )}
+      </main>
 
-      <footer>
+      <footer className="footer">
         Powered by the{' '}
         <a href="https://sleeper.com" target="_blank" rel="noreferrer">Sleeper</a>
         {' '}API &nbsp;&middot;&nbsp; Dynasty Hall of Fame
