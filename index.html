@@ -793,16 +793,16 @@
       color: var(--muted);
     }
 
-    .arch-badge {
+    .assess-badge {
       display: inline-block;
       font-family: 'Cinzel', serif;
-      font-size: 0.6rem;
+      font-size: 0.74rem;
       font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 3px 9px;
-      border-radius: 2px;
-      margin-bottom: 10px;
+      letter-spacing: 0.04em;
+      padding: 5px 11px;
+      border-radius: 3px;
+      margin-bottom: 8px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.4);
     }
     .arch-contender  { background: rgba(245,200,66,0.15); color: var(--gold);    border: 1px solid rgba(245,200,66,0.4); }
     .arch-defending  { background: rgba(245,200,66,0.25); color: #fff8c0;        border: 1px solid rgba(245,200,66,0.6); }
@@ -813,48 +813,31 @@
     .arch-bubble     { background: rgba(180,160,100,0.12); color: #c8b870;       border: 1px solid rgba(180,160,100,0.3); }
     .arch-rebuild    { background: rgba(100,120,160,0.12); color: #8090b8;       border: 1px solid rgba(100,120,160,0.3); }
 
-    .window-pill {
-      display: inline-block;
+    .assess-tagline {
       font-family: Georgia, serif;
       font-style: italic;
-      font-size: 0.68rem;
-      padding: 2px 8px;
-      border-radius: 10px;
-      margin-bottom: 9px;
+      font-size: 0.74rem;
+      line-height: 1.4;
+      color: #b8a888;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(92,45,16,0.5);
     }
-    .window-peak    { background: rgba(245,200,66,0.08); color: var(--gold);   border: 1px solid rgba(245,200,66,0.2); }
-    .window-closing { background: rgba(255,100,60,0.08); color: #ff8060;       border: 1px solid rgba(255,100,60,0.2); }
-    .window-opening { background: rgba(80,200,120,0.08); color: #60d890;       border: 1px solid rgba(80,200,120,0.2); }
 
-    .dual-bars { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-    .dual-bar-row { display: flex; align-items: center; gap: 6px; }
-    .bar-label { font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.08em; color: var(--muted); width: 42px; flex-shrink: 0; }
-    .bar-rank  { font-family: 'Courier New', monospace; font-size: 0.62rem; color: var(--muted); width: 18px; text-align: right; flex-shrink: 0; }
-    .dual-bar-row .value-bar-wrap { flex: 1; margin-bottom: 0; }
-    .dyn-fill { background: linear-gradient(90deg, var(--gold-dark), var(--gold)); }
-    .rd-fill  { background: linear-gradient(90deg, #4a90d0, #7ab8f0); }
-
-    .value-bar-wrap {
-      background: rgba(0,0,0,0.35);
-      border-radius: 2px;
-      height: 4px;
-      margin-bottom: 10px;
-      overflow: hidden;
-    }
-    .value-bar-fill {
-      height: 100%;
-      border-radius: 2px;
-      background: linear-gradient(90deg, var(--gold-dark), var(--gold));
-      transition: width 0.6s ease;
-    }
-    .preview-card.arch-rebuild .value-bar-fill { background: linear-gradient(90deg, #4060a0, #6080c0); }
-    .preview-card.arch-faller  .value-bar-fill { background: linear-gradient(90deg, #a03020, #d05040); }
-
-    .preview-value-label {
-      font-family: 'Courier New', monospace;
-      font-size: 0.68rem;
-      color: var(--muted);
-      margin-bottom: 8px;
+    .preview-live {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #7add7a;
+      background: rgba(100,200,100,0.1);
+      border: 1px solid rgba(100,200,100,0.4);
+      border-radius: 20px;
+      padding: 3px 11px;
+      vertical-align: middle;
+      margin-left: 8px;
+      text-shadow: none;
     }
 
     .preview-players { display: flex; flex-direction: column; gap: 4px; }
@@ -875,7 +858,6 @@
     .pp-pos.TE { background: #f0a060; }
     .pp-pos.K  { background: #c0c0c0; }
     .pp-name { font-family: Georgia, serif; color: #d8c8a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .pp-val  { font-family: 'Courier New', monospace; font-size: 0.68rem; color: var(--muted); margin-left: auto; flex-shrink: 0; }
 
     @media (max-width: 600px) {
       .preview-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -1278,11 +1260,15 @@
       fetchJSON('rostered-players.json'),
     ]);
 
-    // Build both dynasty and redraft value maps keyed by sleeperId
-    const dynMap = {}, rdMap = {};
+    // Build dynasty value, redraft value, and age maps keyed by sleeperId
+    const dynMap = {}, rdMap = {}, ageMap = {};
     fcData.forEach(p => {
       const sid = p.player?.sleeperId;
-      if (sid) { dynMap[sid] = p.value || 0; rdMap[sid] = p.redraftValue || 0; }
+      if (sid) {
+        dynMap[sid] = p.value || 0;
+        rdMap[sid]  = p.redraftValue || 0;
+        if (p.player.maybeAge) ageMap[sid] = p.player.maybeAge;
+      }
     });
 
     const userById = {};
@@ -1302,6 +1288,10 @@
         .sort((a, b) => b.dyn - a.dyn);
       const totalDyn = players.reduce((s, p) => s + p.dyn, 0);
       const totalRd  = players.reduce((s, p) => s + p.rd,  0);
+      // dynasty-value-weighted average age (the age of the talent that actually matters)
+      let ageW = 0, ageWsum = 0;
+      players.forEach(p => { const a = ageMap[p.pid]; if (a) { ageW += a * p.dyn; ageWsum += p.dyn; } });
+      const avgAge = ageWsum > 0 ? ageW / ageWsum : null;
       return {
         rosterId: r.roster_id,
         manager: mgr,
@@ -1309,19 +1299,13 @@
         avatar: avatarUrl(user),
         totalDyn,
         totalRd,
-        // ratio > 1: redraft-heavy (older, window closing); < 1: dynasty-heavy (younger, window opening)
-        ratio: totalDyn > 0 ? totalRd / totalDyn : 1,
+        avgAge,
         topPlayers: players.slice(0, 3),
       };
     });
 
     // Sort by dynasty value (long-term strength)
     teams.sort((a, b) => b.totalDyn - a.totalDyn);
-
-    const maxDyn = teams[0].totalDyn;
-    const minDyn = teams[teams.length - 1].totalDyn;
-    const maxRd  = Math.max(...teams.map(t => t.totalRd));
-    const minRd  = Math.min(...teams.map(t => t.totalRd));
 
     // Assign dynasty rank and redraft rank
     const rdSorted = [...teams].sort((a, b) => b.totalRd - a.totalRd);
@@ -1331,68 +1315,56 @@
     const podiumMgrs = (lastPodium || []).filter(Boolean).map(p => canonical(p.manager));
     const lastChamp = podiumMgrs[0];
 
-    // Archetype logic: uses both dynasty tier + redraft/dynasty ratio
-    // ratio > 1.12 = skews older/redraft  (window closing)
-    // ratio < 0.90 = skews younger/dynasty (window opening)
-    // 0.90–1.12   = balanced, peak window
-    teams.forEach(t => {
-      const wasChamp  = t.manager === lastChamp;
-      const wasPodium = podiumMgrs.includes(t.manager);
-      const rdDynDiff = t.rdRank - t.dynRank; // positive = dynasty-heavy (young); negative = redraft-heavy (aging)
-      const winNow    = rdDynDiff <= -2;  // redraft rank much better than dynasty = aging stars
-      const future    = rdDynDiff >= 2;   // dynasty rank much better than redraft = young talent
-      const balanced  = !winNow && !future;
-      const dynTier   = t.dynRank <= 3 ? 'top' : t.dynRank <= 6 ? 'mid' : 'bot';
-      const rdTier    = t.rdRank  <= 3 ? 'top' : t.rdRank  <= 6 ? 'mid' : 'bot';
+    // League-wide age baseline drives the contention "window" (younger = opening, older = closing)
+    const ages = teams.map(t => t.avgAge).filter(a => a != null);
+    const leagueAge = ages.length ? ages.reduce((s, a) => s + a, 0) / ages.length : 26;
 
-      if (dynTier === 'top' && rdTier === 'top') {
-        if (wasChamp)  { t.arch = '👑 Defending';    t.archClass = 'arch-defending'; }
-        else           { t.arch = '🏆 Contender';    t.archClass = 'arch-contender'; }
-      } else if (dynTier === 'top' && winNow) {
-        // Strong dynasty + even stronger redraft: older core, must win now
-        t.arch = '⚡ Win-Now';              t.archClass = 'arch-winnow';
-      } else if (dynTier === 'top' && future) {
-        // Strong dynasty but redraft lags: very young, ascending
-        t.arch = '🌱 Dynasty Loaded';       t.archClass = 'arch-riser';
-      } else if (dynTier === 'top') {
-        if (wasChamp)  { t.arch = '👑 Defending';    t.archClass = 'arch-defending'; }
-        else           { t.arch = '🏆 Contender';    t.archClass = 'arch-contender'; }
-      } else if (dynTier === 'mid' && rdTier === 'top') {
-        // Redraft punches above dynasty weight: veterans driving value
-        t.arch = '⏰ Window Closing';        t.archClass = 'arch-winnow';
-      } else if (dynTier === 'mid' && rdTier === 'bot') {
-        // Dynasty higher than redraft standing: young team, building
-        t.arch = '📈 Ascending';             t.archClass = 'arch-riser';
-      } else if (dynTier === 'mid') {
-        if (wasPodium) { t.arch = '📉 Faller';       t.archClass = 'arch-faller'; }
-        else           { t.arch = '⚔️ Playoff Threat'; t.archClass = 'arch-threat'; }
-      } else {
-        // Bottom dynasty tier
-        if (rdTier === 'top' || (rdTier === 'mid' && winNow)) {
-          // Old roster, declining dynasty stock
-          t.arch = '🕯️ Fading';              t.archClass = 'arch-faller';
-        } else if (future || rdTier === 'bot') {
-          t.arch = '🔄 Rebuilding';           t.archClass = 'arch-rebuild';
-        } else {
-          t.arch = '🎯 Bubble';               t.archClass = 'arch-bubble';
-        }
+    // Combined team assessment: dynasty tier (long-term strength) × roster-age window,
+    // with a defending-champ override and rank tiebreakers so labels stay distinct.
+    const assess = t => {
+      const wasChamp = t.manager === lastChamp;
+      const dir = t.avgAge == null ? 'peak'
+                : t.avgAge >= leagueAge + 0.6 ? 'close'
+                : t.avgAge <= leagueAge - 0.6 ? 'open'
+                : 'peak';
+      const tier = t.dynRank <= 3 ? 'top' : t.dynRank <= 6 ? 'mid' : 'bot';
+
+      if (tier === 'top') {
+        if (dir === 'close')
+          return { label: 'Fading Dynasty', emoji: '🌅', cls: 'arch-winnow',       tagline: 'Elite roster, aging core. The window is closing — win now.' };
+        if (wasChamp)
+          return { label: 'Reigning Powerhouse', emoji: '👑', cls: 'arch-defending', tagline: 'Defending champ, loaded and balanced. The hunted.' };
+        if (dir === 'open')
+          return { label: 'Rising Juggernaut', emoji: '🚀', cls: 'arch-riser',     tagline: 'Young, elite, and only getting scarier. Buckle up.' };
+        if (t.dynRank === 1)
+          return { label: 'Powerhouse', emoji: '💪', cls: 'arch-contender',        tagline: 'Stacked across the board. The team to beat.' };
+        return   { label: 'Bona Fide Contender', emoji: '🏆', cls: 'arch-contender', tagline: 'A real shot at the throne if the chips fall right.' };
       }
-    });
-
-    // Use rank difference: rdRank > dynRank means dynasty outpaces redraft = young/ascending
-    const windowLabel = t => {
-      const diff = t.rdRank - t.dynRank;
-      if (diff >= 2)  return { label: 'Window: Opening', cls: 'window-opening' };
-      if (diff <= -2) return { label: 'Window: Closing', cls: 'window-closing' };
-      return { label: 'Window: Peak', cls: 'window-peak' };
+      if (tier === 'mid') {
+        if (dir === 'close')
+          return { label: 'Last Dance', emoji: '⏰', cls: 'arch-winnow',           tagline: 'Veteran core making one final push before the rebuild.' };
+        if (dir === 'open')
+          return { label: 'Dark Horse', emoji: '🐎', cls: 'arch-riser',            tagline: "Quietly building something. Don't sleep on them." };
+        return   { label: 'Playoff Hopeful', emoji: '🎯', cls: 'arch-threat',      tagline: 'Squarely in the mix. A break or two from a real run.' };
+      }
+      // bottom dynasty tier (7-10)
+      if (dir === 'close')
+        return { label: 'Fire Sale', emoji: '🔥', cls: 'arch-faller',             tagline: 'Aging and adrift. Time to sell the parts and reset.' };
+      if (dir === 'open')
+        return { label: 'Future Threat', emoji: '🌱', cls: 'arch-rebuild',        tagline: 'Stockpiling youth. The future is the whole plan.' };
+      if (t.dynRank === 7)
+        return { label: 'Long Shot', emoji: '🎯', cls: 'arch-bubble',             tagline: 'On the outside looking in. Needs a few breaks to sneak in.' };
+      if (t.dynRank >= 10)
+        return { label: 'Ragtag Group', emoji: '🎲', cls: 'arch-bubble',          tagline: 'Bottom of the barrel. Hoping to catch lightning in a bottle.' };
+      return   { label: 'Rebuilding', emoji: '🔄', cls: 'arch-rebuild',           tagline: 'Building from the studs up. Patience is the whole plan.' };
     };
+
+    teams.forEach(t => { t.assessment = assess(t); });
 
     const cards = teams.map((t, i) => {
       const rank = i + 1;
-      const dynPct = maxDyn > minDyn ? Math.round((t.totalDyn - minDyn) / (maxDyn - minDyn) * 100) : 50;
-      const rdPct  = maxRd  > minRd  ? Math.round((t.totalRd  - minRd)  / (maxRd  - minRd)  * 100) : 50;
-      const isTop  = rank <= 3;
-      const win    = windowLabel(t);
+      const isTop = rank <= 3;
+      const a = t.assessment;
       const av = t.avatar
         ? `<img class="preview-avatar" src="${escHtml(t.avatar)}" alt="" onerror="this.style.display='none'">`
         : `<div class="preview-avatar avatar-fallback" style="display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;">${escHtml(t.manager[0].toUpperCase())}</div>`;
@@ -1402,11 +1374,10 @@
         return `<div class="preview-player">
           <span class="pp-pos ${escHtml(pos)}">${escHtml(pos)}</span>
           <span class="pp-name">${escHtml(info.n || p.pid)}</span>
-          <span class="pp-val">${p.dyn.toLocaleString()}</span>
         </div>`;
       }).join('');
       return `
-        <div class="preview-card ${t.archClass}">
+        <div class="preview-card ${a.cls}">
           <div class="preview-rank${isTop ? ' top' : ''}">#${rank}</div>
           <div class="preview-head">
             ${av}
@@ -1415,20 +1386,8 @@
               <div class="preview-manager">@${escHtml(t.manager)}</div>
             </div>
           </div>
-          <div class="arch-badge ${t.archClass}">${t.arch}</div>
-          <div class="window-pill ${win.cls}">${win.label}</div>
-          <div class="dual-bars">
-            <div class="dual-bar-row">
-              <span class="bar-label">Dynasty</span>
-              <div class="value-bar-wrap"><div class="value-bar-fill dyn-fill" style="width:${dynPct}%"></div></div>
-              <span class="bar-rank">#${t.dynRank}</span>
-            </div>
-            <div class="dual-bar-row">
-              <span class="bar-label">Redraft</span>
-              <div class="value-bar-wrap"><div class="value-bar-fill rd-fill" style="width:${rdPct}%"></div></div>
-              <span class="bar-rank">#${t.rdRank}</span>
-            </div>
-          </div>
+          <div class="assess-badge ${a.cls}">${a.emoji} ${escHtml(a.label)}</div>
+          <div class="assess-tagline">${escHtml(a.tagline)}</div>
           <div class="preview-players">${playerRows}</div>
         </div>`;
     }).join('');
@@ -1436,8 +1395,8 @@
     const el = document.getElementById('season-preview');
     const year = currentLeague.season || '2026';
     el.innerHTML = `
-      <div class="preview-title">🔭 ${year} Season Preview</div>
-      <div class="preview-sub">Dynasty &amp; Redraft Value Rankings · Powered by FantasyCalc</div>
+      <div class="preview-title">🔭 ${year} Season Preview <span class="preview-live">Current Season</span></div>
+      <div class="preview-sub">${escHtml(currentLeague.name)} · Power ranked by roster strength · Powered by FantasyCalc</div>
       <div class="preview-grid">${cards}</div>`;
     el.style.display = 'block';
   }
@@ -1460,8 +1419,11 @@
           try { podium = await getPodium(league.league_id); } catch(e) {}
         }
         seasons.push({ league, podium });
-        const card = renderSeason(league, podium);
-        seasonsEl.appendChild(card);
+        // Skip the in-progress season card — the Season Preview above covers it.
+        const isActive = league.status === 'in_season' || league.status === 'pre_draft';
+        if (!isActive) {
+          seasonsEl.appendChild(renderSeason(league, podium));
+        }
       }
 
       const tc = renderTrophyCase(seasons);
