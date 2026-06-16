@@ -286,6 +286,11 @@
     .tc-count.zero { color: var(--muted); opacity: 0.4; }
     .tc-rank-medal { font-size: 1.1rem; }
 
+    .tc-profit { font-family: 'Courier New', monospace; font-size: 0.95rem; }
+    .profit-pos { color: #6ddd6d; text-shadow: 0 0 8px rgba(100,220,100,0.3); }
+    .profit-neg { color: #dd6d6d; text-shadow: 0 0 8px rgba(220,100,100,0.3); }
+    .profit-zero { color: var(--muted); }
+
     .tc-cobweb-row td { padding: 10px 18px; border-top: 1px dashed rgba(255,255,255,0.06); }
     .tc-cobweb-line {
       display: flex; align-items: center; gap: 10px; justify-content: center;
@@ -983,16 +988,32 @@
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  // Usernames that changed over time — map old → canonical
+  const ALIAS = { 'MarkyJay100': 'Marko-J' };
+  function canonical(name) { return ALIAS[name] || name; }
+
   function renderTrophyCase(seasons) {
-    // Aggregate medals per manager across completed seasons
-    const tally = {}; // key: manager -> {manager, avatar, golds, silvers, bronzes}
-    seasons.forEach(({ podium }) => {
-      if (!podium) return;
+    const BUY_IN = 30;
+    const POT = 300; // 10 teams × $30
+    const PAYOUT = [POT * 0.60, POT * 0.30, POT * 0.10]; // 180, 90, 30
+
+    // Aggregate medals + participations per manager across completed seasons
+    const tally = {};
+    const completedSeasons = seasons.filter(s => s.podium);
+
+    completedSeasons.forEach(({ league, podium }) => {
+      // Count every participant in this season
+      const participants = new Set();
+      if (league._users) league._users.forEach(u => { if (u.display_name) participants.add(canonical(u.display_name)); });
+      participants.forEach(m => {
+        if (!tally[m]) tally[m] = { manager: m, avatar: null, g: 0, s: 0, b: 0, seasons: 0 };
+        tally[m].seasons++;
+      });
+      // Record medals
       podium.forEach((p, i) => {
         if (!p) return;
-        const key = p.manager;
-        if (!tally[key]) tally[key] = { manager: p.manager, avatar: p.avatar, g: 0, s: 0, b: 0 };
-        // keep latest non-null avatar
+        const key = canonical(p.manager);
+        if (!tally[key]) tally[key] = { manager: key, avatar: null, g: 0, s: 0, b: 0, seasons: 0 };
         if (p.avatar) tally[key].avatar = p.avatar;
         if (i === 0) tally[key].g++;
         else if (i === 1) tally[key].s++;
@@ -1000,16 +1021,28 @@
       });
     });
 
-    const rows = Object.values(tally);
-    if (!rows.length) return null;
+    const allRows = Object.values(tally);
+    if (!allRows.length) return null;
+
+    const profit = r => r.g * PAYOUT[0] + r.s * PAYOUT[1] + r.b * PAYOUT[2] - r.seasons * BUY_IN;
+
+    const medalRows = allRows.filter(r => r.g + r.s + r.b > 0);
+    const noMedalRows = allRows.filter(r => r.g + r.s + r.b === 0);
 
     // Sort: golds, then silvers, then bronzes
-    rows.sort((a, b) => b.g - a.g || b.s - a.s || b.b - a.b);
+    medalRows.sort((a, b) => b.g - a.g || b.s - a.s || b.b - a.b);
 
-    const completedCount = seasons.filter(s => s.podium).length;
+    const completedCount = completedSeasons.length;
 
-    const haveRows = rows.map(r => {
+    const fmtProfit = p => {
+      if (p === 0) return '$0';
+      return (p > 0 ? '+$' : '-$') + Math.abs(p);
+    };
+
+    const haveRows = medalRows.map(r => {
       const total = r.g + r.s + r.b;
+      const p = profit(r);
+      const profitClass = p > 0 ? 'profit-pos' : p < 0 ? 'profit-neg' : 'profit-zero';
       const av = avatarHtml({ avatar: r.avatar, teamName: r.manager }, 'tc-avatar');
       return `
         <tr>
@@ -1017,21 +1050,18 @@
           <td class="tc-count ${r.g ? '' : 'zero'}" data-label="Gold">${r.g ? '🥇 ' + r.g : '–'}</td>
           <td class="tc-count ${r.s ? '' : 'zero'}" data-label="Silver">${r.s ? '🥈 ' + r.s : '–'}</td>
           <td class="tc-count ${r.b ? '' : 'zero'}" data-label="Bronze">${r.b ? '🥉 ' + r.b : '–'}</td>
+          <td class="tc-count" data-label="Total">${total}</td>
+          <td class="tc-count tc-profit ${profitClass}" data-label="Profit">${fmtProfit(p)}</td>
         </tr>`;
     });
 
-    // Collect all unique managers seen across all seasons
-    const allManagerNames = new Set();
-    seasons.forEach(({ league, podium }) => {
-      if (league._users) league._users.forEach(u => { if (u.display_name) allManagerNames.add(u.display_name); });
-    });
-    const zeroTrophy = [...allManagerNames].filter(m => !tally[m]);
+    const zeroTrophy = noMedalRows.map(r => r.manager);
     let cobwebRow = '';
     if (zeroTrophy.length) {
       const names = zeroTrophy.map(m => `@${escHtml(m)}`).join(', ');
       cobwebRow = `
         <tr class="tc-cobweb-row">
-          <td colspan="4">
+          <td colspan="6">
             <div class="tc-cobweb-line">
               <span class="cobweb-icon">🕸️</span>
               <span class="cobweb-names">${names}</span>
@@ -1056,6 +1086,8 @@
                 <th class="num">Gold</th>
                 <th class="num">Silver</th>
                 <th class="num">Bronze</th>
+                <th class="num">Total</th>
+                <th class="num">Profit</th>
               </tr>
             </thead>
             <tbody>${body}</tbody>
