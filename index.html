@@ -712,6 +712,154 @@
       .mvp-info { min-width: 0; flex: 1; }
     }
 
+    /* ── SEASON PREVIEW ── */
+    #season-preview {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 20px 0;
+    }
+    .preview-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 #fff8c0;
+    }
+    .preview-sub {
+      text-align: center;
+      color: var(--muted);
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 0.9rem;
+      margin-bottom: 32px;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .preview-card {
+      background:
+        repeating-linear-gradient(91deg, transparent 0px, transparent 4px, rgba(92,45,16,0.06) 4px, rgba(92,45,16,0.06) 5px),
+        linear-gradient(160deg, #2a1208 0%, #1e0d05 100%);
+      border: 2px solid var(--wood-highlight);
+      border-radius: 4px;
+      padding: 16px 16px 14px;
+      position: relative;
+      box-shadow: 0 0 0 1px #3a1a08, 0 4px 16px rgba(0,0,0,0.5);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .preview-card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px #5c2d10, 0 8px 24px rgba(0,0,0,0.6); }
+
+    .preview-rank {
+      position: absolute;
+      top: 10px; right: 12px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+    .preview-rank.top { color: var(--gold); opacity: 1; }
+
+    .preview-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .preview-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%; object-fit: cover;
+      background: var(--surface2);
+      border: 2px solid #5c2d10;
+      flex-shrink: 0;
+    }
+    .preview-names { min-width: 0; }
+    .preview-team {
+      font-family: Georgia, serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #f8f0e0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .preview-manager {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .arch-badge {
+      display: inline-block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 2px;
+      margin-bottom: 10px;
+    }
+    .arch-contender  { background: rgba(245,200,66,0.15); color: var(--gold);    border: 1px solid rgba(245,200,66,0.4); }
+    .arch-defending  { background: rgba(245,200,66,0.25); color: #fff8c0;        border: 1px solid rgba(245,200,66,0.6); }
+    .arch-threat     { background: rgba(180,120,220,0.12); color: #c890f0;       border: 1px solid rgba(180,120,220,0.35); }
+    .arch-riser      { background: rgba(100,210,100,0.12); color: #7de87d;       border: 1px solid rgba(100,210,100,0.35); }
+    .arch-faller     { background: rgba(220,100,80,0.12);  color: #f07a6a;       border: 1px solid rgba(220,100,80,0.35); }
+    .arch-bubble     { background: rgba(180,160,100,0.12); color: #c8b870;       border: 1px solid rgba(180,160,100,0.3); }
+    .arch-rebuild    { background: rgba(100,120,160,0.12); color: #8090b8;       border: 1px solid rgba(100,120,160,0.3); }
+
+    .value-bar-wrap {
+      background: rgba(0,0,0,0.35);
+      border-radius: 2px;
+      height: 4px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .value-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--gold-dark), var(--gold));
+      transition: width 0.6s ease;
+    }
+    .preview-card.arch-rebuild .value-bar-fill { background: linear-gradient(90deg, #4060a0, #6080c0); }
+    .preview-card.arch-faller  .value-bar-fill { background: linear-gradient(90deg, #a03020, #d05040); }
+
+    .preview-value-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .preview-players { display: flex; flex-direction: column; gap: 4px; }
+    .preview-player {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem;
+    }
+    .pp-pos {
+      font-family: 'Cinzel', serif;
+      font-size: 0.58rem; font-weight: 700;
+      padding: 1px 5px; border-radius: 2px;
+      flex-shrink: 0;
+      color: #000;
+    }
+    .pp-pos.QB { background: #f5c842; }
+    .pp-pos.RB { background: #7de87d; }
+    .pp-pos.WR { background: #8ac8ff; }
+    .pp-pos.TE { background: #f0a060; }
+    .pp-pos.K  { background: #c0c0c0; }
+    .pp-name { font-family: Georgia, serif; color: #d8c8a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pp-val  { font-family: 'Courier New', monospace; font-size: 0.68rem; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+
+    @media (max-width: 600px) {
+      .preview-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .preview-card { padding: 12px 12px 10px; }
+    }
+
     /* ── FOOTER ── */
     footer {
       text-align: center;
@@ -747,6 +895,8 @@
 </div>
 
 <div id="trophy-case" style="display:none;"></div>
+
+<div id="season-preview" style="display:none;"></div>
 
 <div id="seasons" style="display:none;"></div>
 
@@ -1097,6 +1247,108 @@
     return wrap;
   }
 
+  async function renderSeasonPreview(currentLeague, lastPodium) {
+    const FC_URL = 'https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=2&numTeams=10&ppr=0.5';
+    const [fcData, rosters, users, playerMap] = await Promise.all([
+      fetchJSON(FC_URL),
+      fetchJSON(`${API}/league/${currentLeague.league_id}/rosters`),
+      fetchJSON(`${API}/league/${currentLeague.league_id}/users`),
+      fetchJSON('rostered-players.json'),
+    ]);
+
+    const valueMap = {};
+    fcData.forEach(p => { if (p.player?.sleeperId) valueMap[p.player.sleeperId] = p.value; });
+
+    const userById = {};
+    users.forEach(u => { userById[u.user_id] = u; });
+
+    const teams = rosters.map(r => {
+      const user = userById[r.owner_id] || {};
+      const mgr = canonical(user.display_name || '?');
+      const players = (r.players || [])
+        .map(pid => ({ pid, val: valueMap[pid] || 0, info: playerMap[pid] }))
+        .filter(p => p.val > 0)
+        .sort((a, b) => b.val - a.val);
+      const totalValue = players.reduce((s, p) => s + p.val, 0);
+      return {
+        rosterId: r.roster_id,
+        manager: mgr,
+        teamName: user.metadata?.team_name || mgr,
+        avatar: avatarUrl(user),
+        totalValue,
+        topPlayers: players.slice(0, 3),
+      };
+    });
+
+    teams.sort((a, b) => b.totalValue - a.totalValue);
+    const maxVal = teams[0].totalValue;
+    const minVal = teams[teams.length - 1].totalValue;
+
+    // last season podium managers
+    const podiumMgrs = (lastPodium || []).filter(Boolean).map(p => canonical(p.manager));
+    const lastChamp = podiumMgrs[0];
+
+    teams.forEach((t, i) => {
+      const rank = i + 1;
+      const wasPodium = podiumMgrs.includes(t.manager);
+      const wasChamp  = t.manager === lastChamp;
+      if (rank <= 2) {
+        if (wasChamp) { t.arch = '👑 Defending'; t.archClass = 'arch-defending'; }
+        else          { t.arch = '🏆 Contender'; t.archClass = 'arch-contender'; }
+      } else if (rank <= 4) {
+        if (wasPodium) { t.arch = '📉 Faller';       t.archClass = 'arch-faller'; }
+        else           { t.arch = '⚔️ Playoff Threat'; t.archClass = 'arch-threat'; }
+      } else if (rank <= 7) {
+        if (wasPodium) { t.arch = '📉 Faller';    t.archClass = 'arch-faller'; }
+        else if (rank <= 6) { t.arch = '📈 Riser'; t.archClass = 'arch-riser'; }
+        else           { t.arch = '🎯 Bubble';     t.archClass = 'arch-bubble'; }
+      } else {
+        t.arch = '🔄 Rebuilding'; t.archClass = 'arch-rebuild';
+      }
+    });
+
+    const cards = teams.map((t, i) => {
+      const rank = i + 1;
+      const pct = maxVal > minVal ? Math.round((t.totalValue - minVal) / (maxVal - minVal) * 100) : 50;
+      const isTop = rank <= 3;
+      const av = t.avatar
+        ? `<img class="preview-avatar" src="${escHtml(t.avatar)}" alt="" onerror="this.style.display='none'">`
+        : `<div class="preview-avatar avatar-fallback" style="display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;">${escHtml(t.manager[0].toUpperCase())}</div>`;
+      const playerRows = t.topPlayers.map(p => {
+        const info = p.info || {};
+        const pos = info.p || '?';
+        return `<div class="preview-player">
+          <span class="pp-pos ${escHtml(pos)}">${escHtml(pos)}</span>
+          <span class="pp-name">${escHtml(info.n || p.pid)}</span>
+          <span class="pp-val">${p.val.toLocaleString()}</span>
+        </div>`;
+      }).join('');
+      return `
+        <div class="preview-card ${t.archClass}">
+          <div class="preview-rank${isTop ? ' top' : ''}">#${rank}</div>
+          <div class="preview-head">
+            ${av}
+            <div class="preview-names">
+              <div class="preview-team">${escHtml(t.teamName)}</div>
+              <div class="preview-manager">@${escHtml(t.manager)}</div>
+            </div>
+          </div>
+          <div class="arch-badge ${t.archClass}">${t.arch}</div>
+          <div class="value-bar-wrap"><div class="value-bar-fill" style="width:${pct}%"></div></div>
+          <div class="preview-value-label">${t.totalValue.toLocaleString()} dynasty pts</div>
+          <div class="preview-players">${playerRows}</div>
+        </div>`;
+    }).join('');
+
+    const el = document.getElementById('season-preview');
+    const year = currentLeague.season || '2026';
+    el.innerHTML = `
+      <div class="preview-title">🔭 ${year} Season Preview</div>
+      <div class="preview-sub">Dynasty Value Rankings · Powered by FantasyCalc</div>
+      <div class="preview-grid">${cards}</div>`;
+    el.style.display = 'block';
+  }
+
   async function main() {
     try {
       const chain = await getLeagueChain(ROOT_LEAGUE_ID);
@@ -1123,6 +1375,13 @@
       if (tc) {
         trophyEl.appendChild(tc);
         trophyEl.style.display = 'block';
+      }
+
+      // Season preview for the current (incomplete) season
+      const currentSeason = seasons.find(s => !s.podium);
+      const lastCompletedPodium = seasons.find(s => s.podium)?.podium || null;
+      if (currentSeason) {
+        renderSeasonPreview(currentSeason.league, lastCompletedPodium).catch(e => console.warn('Preview failed:', e));
       }
 
       loadingEl.style.display = 'none';
