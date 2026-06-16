@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dynasty Hall of Fame</title>
+  <title>Dynasty Year IV</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Georgia:wght@400;700&display=swap');
 
@@ -355,11 +355,38 @@
     }
 
     /* ── SEASONS GRID ── */
+    #past-seasons {
+      padding-top: 60px;
+      padding-bottom: 40px;
+    }
     #seasons {
       max-width: 1100px;
       margin: 0 auto;
-      padding: 60px 20px 100px;
+      padding: 36px 20px 60px;
     }
+
+    /* Shared section heading (Past Seasons, etc.) */
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 #fff8c0;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+
+    /* Smooth anchor scrolling with offset so headings aren't flush to the top */
+    html { scroll-behavior: smooth; }
+    #season-preview, #trophy-case, #past-seasons { scroll-margin-top: 16px; }
 
     .season-card {
       background:
@@ -886,10 +913,12 @@
 
 <div class="hero">
   <div class="trophy-icon">🏆</div>
-  <h1>Dynasty Hall of Fame</h1>
-  <p class="subtitle">The Immortalized Podium Finishers</p>
+  <h1>Dynasty Year IV</h1>
+  <p class="subtitle">The League Almanac</p>
   <nav class="topnav">
-    <a class="navlink active" href="index.html">🏆 Hall of Fame</a>
+    <a class="navlink" href="#season-preview">Season Preview</a>
+    <a class="navlink" href="#trophy-case">Trophy Case</a>
+    <a class="navlink" href="#past-seasons">Past Seasons</a>
   </nav>
 </div>
 
@@ -898,14 +927,18 @@
   Loading league history…
 </div>
 
-<div id="trophy-case" style="display:none;"></div>
-
 <div id="season-preview" style="display:none;"></div>
 
-<div id="seasons" style="display:none;"></div>
+<div id="trophy-case" style="display:none;"></div>
+
+<section id="past-seasons" style="display:none;">
+  <div class="section-title">📜 Past Seasons</div>
+  <div class="section-sub">Every chapter of the dynasty, immortalized</div>
+  <div id="seasons"></div>
+</section>
 
 <footer>
-  Powered by the <a href="https://sleeper.com" target="_blank">Sleeper</a> API &nbsp;·&nbsp; Dynasty Hall of Fame
+  Powered by the <a href="https://sleeper.com" target="_blank">Sleeper</a> API &nbsp;·&nbsp; Dynasty Year IV
 </footer>
 
 <script>
@@ -1251,7 +1284,7 @@
     return wrap;
   }
 
-  async function renderSeasonPreview(currentLeague, lastPodium) {
+  async function renderSeasonPreview(currentLeague, lastPodium, history = {}) {
     const FC_URL = 'https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=2&numTeams=10&ppr=0.5';
     const [fcData, rosters, users, playerMap] = await Promise.all([
       fetchJSON(FC_URL),
@@ -1274,6 +1307,10 @@
     const userById = {};
     users.forEach(u => { userById[u.user_id] = u; });
 
+    // Number of starting slots (drives who counts as a "starter" vs depth)
+    const STARTER_SLOTS = (currentLeague.roster_positions || [])
+      .filter(s => !['BN', 'IR', 'TAXI'].includes(s)).length || 9;
+
     const teams = rosters.map(r => {
       const user = userById[r.owner_id] || {};
       const mgr = canonical(user.display_name || '?');
@@ -1282,16 +1319,26 @@
           pid,
           dyn: dynMap[pid] || 0,
           rd:  rdMap[pid]  || 0,
+          age: ageMap[pid] || null,
           info: playerMap[pid],
         }))
         .filter(p => p.dyn > 0)
         .sort((a, b) => b.dyn - a.dyn);
       const totalDyn = players.reduce((s, p) => s + p.dyn, 0);
       const totalRd  = players.reduce((s, p) => s + p.rd,  0);
-      // dynasty-value-weighted average age (the age of the talent that actually matters)
-      let ageW = 0, ageWsum = 0;
-      players.forEach(p => { const a = ageMap[p.pid]; if (a) { ageW += a * p.dyn; ageWsum += p.dyn; } });
-      const avgAge = ageWsum > 0 ? ageW / ageWsum : null;
+
+      // Split into starters (top slots by value) and bench
+      const starters = players.slice(0, STARTER_SLOTS);
+      const bench    = players.slice(STARTER_SLOTS);
+      const starterDyn = starters.reduce((s, p) => s + p.dyn, 0);
+      const benchDyn   = bench.reduce((s, p) => s + p.dyn, 0);
+
+      // Age weighted by value over STARTERS only — the starters' age is what drives the window
+      let aw = 0, aws = 0;
+      starters.forEach(p => { if (p.age) { aw += p.age * p.dyn; aws += p.dyn; } });
+      const starterAge = aws > 0 ? aw / aws : null;
+
+      const h = history[mgr] || { titles: 0, podiums: 0 };
       return {
         rosterId: r.roster_id,
         manager: mgr,
@@ -1299,64 +1346,89 @@
         avatar: avatarUrl(user),
         totalDyn,
         totalRd,
-        avgAge,
+        starterAge,
+        // bench value relative to starters: low = top-heavy, high = deep
+        depthRatio: starterDyn > 0 ? benchDyn / starterDyn : 0,
+        titles: h.titles,
+        podiums: h.podiums,
         topPlayers: players.slice(0, 3),
       };
     });
 
     // Sort by dynasty value (long-term strength)
     teams.sort((a, b) => b.totalDyn - a.totalDyn);
+    teams.forEach(t => { t.dynRank = teams.indexOf(t) + 1; });
 
-    // Assign dynasty rank and redraft rank
-    const rdSorted = [...teams].sort((a, b) => b.totalRd - a.totalRd);
-    teams.forEach(t => { t.dynRank = teams.indexOf(t) + 1; t.rdRank = rdSorted.indexOf(t) + 1; });
+    // Depth rank across the league (1 = deepest)
+    const depthSorted = [...teams].sort((a, b) => b.depthRatio - a.depthRatio);
+    teams.forEach(t => { t.depthRank = depthSorted.indexOf(t) + 1; });
+    const depthOf = t => t.depthRank <= 3 ? 'deep' : t.depthRank >= 8 ? 'topheavy' : 'balanced';
 
     // last season podium managers
     const podiumMgrs = (lastPodium || []).filter(Boolean).map(p => canonical(p.manager));
     const lastChamp = podiumMgrs[0];
 
-    // League-wide age baseline drives the contention "window" (younger = opening, older = closing)
-    const ages = teams.map(t => t.avgAge).filter(a => a != null);
+    // League starter-age baseline drives the contention "window" (younger = opening, older = closing)
+    const ages = teams.map(t => t.starterAge).filter(a => a != null);
     const leagueAge = ages.length ? ages.reduce((s, a) => s + a, 0) / ages.length : 26;
 
-    // Combined team assessment: dynasty tier (long-term strength) × roster-age window,
-    // with a defending-champ override and rank tiebreakers so labels stay distinct.
+    const depthClause = {
+      deep:     'Loaded with depth — reinforcements at every turn.',
+      topheavy: 'Top-heavy, though — a star core with little behind it.',
+      balanced: 'A balanced build with no glaring holes.',
+    };
+
+    // Combined team assessment: dynasty tier (strength) × starter-age window × pedigree,
+    // with a depth note woven into every tagline.
     const assess = t => {
       const wasChamp = t.manager === lastChamp;
-      const dir = t.avgAge == null ? 'peak'
-                : t.avgAge >= leagueAge + 0.6 ? 'close'
-                : t.avgAge <= leagueAge - 0.6 ? 'open'
+      const ring     = t.titles >= 1;
+      const proven   = t.podiums >= 2;
+      const dir = t.starterAge == null ? 'peak'
+                : t.starterAge >= leagueAge + 0.6 ? 'close'
+                : t.starterAge <= leagueAge - 0.6 ? 'open'
                 : 'peak';
       const tier = t.dynRank <= 3 ? 'top' : t.dynRank <= 6 ? 'mid' : 'bot';
+      const depth = depthOf(t);
+      const note = ' ' + depthClause[depth];
 
+      let v;
       if (tier === 'top') {
         if (dir === 'close')
-          return { label: 'Fading Dynasty', emoji: '🌅', cls: 'arch-winnow',       tagline: 'Elite roster, aging core. The window is closing — win now.' };
-        if (wasChamp)
-          return { label: 'Reigning Powerhouse', emoji: '👑', cls: 'arch-defending', tagline: 'Defending champ, loaded and balanced. The hunted.' };
-        if (dir === 'open')
-          return { label: 'Rising Juggernaut', emoji: '🚀', cls: 'arch-riser',     tagline: 'Young, elite, and only getting scarier. Buckle up.' };
-        if (t.dynRank === 1)
-          return { label: 'Powerhouse', emoji: '💪', cls: 'arch-contender',        tagline: 'Stacked across the board. The team to beat.' };
-        return   { label: 'Bona Fide Contender', emoji: '🏆', cls: 'arch-contender', tagline: 'A real shot at the throne if the chips fall right.' };
-      }
-      if (tier === 'mid') {
+          v = ring ? { label: 'Fading Dynasty', emoji: '🌅', cls: 'arch-winnow', tagline: 'Pedigree and firepower, but an aging core. Win now.' }
+                   : { label: 'Win-Now Window', emoji: '⚡', cls: 'arch-winnow', tagline: 'Veteran-laden and loaded. This is the year to cash in.' };
+        else if (wasChamp)
+          v = { label: 'Reigning Powerhouse', emoji: '👑', cls: 'arch-defending', tagline: 'Defending champ, stacked and balanced. The hunted.' };
+        else if (dir === 'open')
+          v = ring ? { label: 'Budding Dynasty', emoji: '🌟', cls: 'arch-riser', tagline: 'A title pedigree and a young, rising core. Scary.' }
+                   : { label: 'Rising Juggernaut', emoji: '🚀', cls: 'arch-riser', tagline: 'Young, elite, and only getting scarier. Buckle up.' };
+        else if (t.dynRank === 1)
+          v = { label: 'Powerhouse', emoji: '💪', cls: 'arch-contender', tagline: 'Stacked across the board. The team to beat.' };
+        else
+          v = proven ? { label: 'Perennial Contender', emoji: '🏆', cls: 'arch-contender', tagline: 'Always in the hunt, year after year.' }
+                     : { label: 'Bona Fide Contender', emoji: '🏆', cls: 'arch-contender', tagline: 'A real shot at the throne if the chips fall right.' };
+      } else if (tier === 'mid') {
         if (dir === 'close')
-          return { label: 'Last Dance', emoji: '⏰', cls: 'arch-winnow',           tagline: 'Veteran core making one final push before the rebuild.' };
-        if (dir === 'open')
-          return { label: 'Dark Horse', emoji: '🐎', cls: 'arch-riser',            tagline: "Quietly building something. Don't sleep on them." };
-        return   { label: 'Playoff Hopeful', emoji: '🎯', cls: 'arch-threat',      tagline: 'Squarely in the mix. A break or two from a real run.' };
+          v = { label: 'Last Dance', emoji: '⏰', cls: 'arch-winnow', tagline: 'A veteran core making one final push before the rebuild.' };
+        else if (dir === 'open')
+          v = { label: 'Dark Horse', emoji: '🐎', cls: 'arch-riser', tagline: "Quietly building something. Don't sleep on them." };
+        else
+          v = { label: 'Playoff Hopeful', emoji: '🎯', cls: 'arch-threat', tagline: 'Squarely in the mix. A break or two from a real run.' };
+      } else {
+        if (dir === 'close')
+          v = ring ? { label: 'Fallen Dynasty', emoji: '🏚️', cls: 'arch-faller', tagline: 'Former glory, now aging and adrift. Time to reset.' }
+                   : { label: 'Fire Sale', emoji: '🔥', cls: 'arch-faller', tagline: 'Aging and adrift. Sell the parts and reset.' };
+        else if (dir === 'open')
+          v = { label: 'Future Threat', emoji: '🌱', cls: 'arch-rebuild', tagline: 'Stockpiling youth. The future is the whole plan.' };
+        else if (t.dynRank === 7)
+          v = { label: 'Long Shot', emoji: '🎲', cls: 'arch-bubble', tagline: 'On the outside looking in. Needs a few breaks to sneak in.' };
+        else if (t.dynRank >= 10)
+          v = { label: 'Ragtag Group', emoji: '🃏', cls: 'arch-bubble', tagline: 'Bottom of the barrel. Hoping to catch lightning in a bottle.' };
+        else
+          v = { label: 'Rebuilding', emoji: '🔄', cls: 'arch-rebuild', tagline: 'Building from the studs up. Patience is the whole plan.' };
       }
-      // bottom dynasty tier (7-10)
-      if (dir === 'close')
-        return { label: 'Fire Sale', emoji: '🔥', cls: 'arch-faller',             tagline: 'Aging and adrift. Time to sell the parts and reset.' };
-      if (dir === 'open')
-        return { label: 'Future Threat', emoji: '🌱', cls: 'arch-rebuild',        tagline: 'Stockpiling youth. The future is the whole plan.' };
-      if (t.dynRank === 7)
-        return { label: 'Long Shot', emoji: '🎯', cls: 'arch-bubble',             tagline: 'On the outside looking in. Needs a few breaks to sneak in.' };
-      if (t.dynRank >= 10)
-        return { label: 'Ragtag Group', emoji: '🎲', cls: 'arch-bubble',          tagline: 'Bottom of the barrel. Hoping to catch lightning in a bottle.' };
-      return   { label: 'Rebuilding', emoji: '🔄', cls: 'arch-rebuild',           tagline: 'Building from the studs up. Patience is the whole plan.' };
+      v.tagline += note;
+      return v;
     };
 
     teams.forEach(t => { t.assessment = assess(t); });
@@ -1432,15 +1504,28 @@
         trophyEl.style.display = 'block';
       }
 
+      // Per-manager success history (titles + podiums) for the preview's pedigree logic
+      const history = {};
+      seasons.forEach(({ podium }) => {
+        if (!podium) return;
+        podium.forEach((p, i) => {
+          if (!p) return;
+          const m = canonical(p.manager);
+          if (!history[m]) history[m] = { titles: 0, podiums: 0 };
+          history[m].podiums++;
+          if (i === 0) history[m].titles++;
+        });
+      });
+
       // Season preview for the current (incomplete) season
       const currentSeason = seasons.find(s => !s.podium);
       const lastCompletedPodium = seasons.find(s => s.podium)?.podium || null;
       if (currentSeason) {
-        renderSeasonPreview(currentSeason.league, lastCompletedPodium).catch(e => console.warn('Preview failed:', e));
+        renderSeasonPreview(currentSeason.league, lastCompletedPodium, history).catch(e => console.warn('Preview failed:', e));
       }
 
       loadingEl.style.display = 'none';
-      seasonsEl.style.display = 'block';
+      document.getElementById('past-seasons').style.display = 'block';
     } catch(err) {
       document.getElementById('loading').innerHTML = `
         <div style="color:#ff6060;">Error loading league data: ${err.message}</div>`;
@@ -1449,6 +1534,24 @@
   }
 
   main();
+
+  // Highlight the nav link for whichever section is currently in view
+  (function navSpy() {
+    const links = [...document.querySelectorAll('.topnav .navlink')];
+    const byId = id => links.find(l => l.getAttribute('href') === '#' + id);
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          byId(e.target.id)?.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    ['season-preview', 'trophy-case', 'past-seasons'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) obs.observe(el);
+    });
+  })();
 </script>
 </body>
 </html>
