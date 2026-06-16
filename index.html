@@ -867,24 +867,37 @@
       text-shadow: none;
     }
 
-    .preview-players { display: flex; flex-direction: column; gap: 4px; }
-    .preview-player {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 0.75rem;
+    /* Positional letter grades */
+    .grade-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .grade-cell {
+      text-align: center;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(92,45,16,0.6);
+      border-radius: 3px;
+      padding: 7px 2px 6px;
+      box-shadow: inset 0 1px 0 rgba(255,220,150,0.04);
     }
-    .pp-pos {
+    .grade-pos {
+      display: block;
       font-family: 'Cinzel', serif;
-      font-size: 0.58rem; font-weight: 700;
-      padding: 1px 5px; border-radius: 2px;
-      flex-shrink: 0;
-      color: #000;
+      font-size: 0.56rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 3px;
     }
-    .pp-pos.QB { background: #f5c842; }
-    .pp-pos.RB { background: #7de87d; }
-    .pp-pos.WR { background: #8ac8ff; }
-    .pp-pos.TE { background: #f0a060; }
-    .pp-pos.K  { background: #c0c0c0; }
-    .pp-name { font-family: Georgia, serif; color: #d8c8a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .grade {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      line-height: 1;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .grade-a { color: #6ddd6d; }
+    .grade-b { color: #f5c842; }
+    .grade-c { color: #d8c8a8; }
+    .grade-d { color: #f0a060; }
+    .grade-f { color: #f07a6a; }
 
     @media (max-width: 600px) {
       .preview-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -1293,14 +1306,15 @@
       fetchJSON('rostered-players.json'),
     ]);
 
-    // Build dynasty value, redraft value, and age maps keyed by sleeperId
-    const dynMap = {}, rdMap = {}, ageMap = {};
+    // Build dynasty value, redraft value, age, and position maps keyed by sleeperId
+    const dynMap = {}, rdMap = {}, ageMap = {}, posMap = {};
     fcData.forEach(p => {
       const sid = p.player?.sleeperId;
       if (sid) {
         dynMap[sid] = p.value || 0;
         rdMap[sid]  = p.redraftValue || 0;
         if (p.player.maybeAge) ageMap[sid] = p.player.maybeAge;
+        if (p.player.position) posMap[sid] = p.player.position;
       }
     });
 
@@ -1320,6 +1334,7 @@
           dyn: dynMap[pid] || 0,
           rd:  rdMap[pid]  || 0,
           age: ageMap[pid] || null,
+          pos: posMap[pid] || (playerMap[pid] && playerMap[pid].p) || '?',
           info: playerMap[pid],
         }))
         .filter(p => p.dyn > 0)
@@ -1351,7 +1366,7 @@
         depthRatio: starterDyn > 0 ? benchDyn / starterDyn : 0,
         titles: h.titles,
         podiums: h.podiums,
-        topPlayers: players.slice(0, 3),
+        players,
       };
     });
 
@@ -1363,6 +1378,37 @@
     const depthSorted = [...teams].sort((a, b) => b.depthRatio - a.depthRatio);
     teams.forEach(t => { t.depthRank = depthSorted.indexOf(t) + 1; });
     const depthOf = t => t.depthRank <= 3 ? 'deep' : t.depthRank >= 8 ? 'topheavy' : 'balanced';
+
+    // Positional letter grades, by combined REDRAFT value of each team's starters at that
+    // position, graded on a league-wide curve (z-score). Starter counts per a superflex lineup.
+    const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
+    const POS_STARTERS = { QB: 2, RB: 2, WR: 3, TE: 1 };
+    teams.forEach(t => {
+      t.posVal = {};
+      POSITIONS.forEach(pos => {
+        const top = t.players.filter(p => p.pos === pos).sort((a, b) => b.rd - a.rd).slice(0, POS_STARTERS[pos]);
+        t.posVal[pos] = top.reduce((s, p) => s + p.rd, 0);
+      });
+    });
+    const posStats = {};
+    POSITIONS.forEach(pos => {
+      const vals = teams.map(t => t.posVal[pos]);
+      const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+      const std  = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length) || 1;
+      posStats[pos] = { mean, std };
+    });
+    const letterGrade = z =>
+      z >=  1.5 ? 'A+' : z >=  1.0 ? 'A' : z >=  0.6 ? 'A-' :
+      z >=  0.3 ? 'B+' : z >=  0.0 ? 'B' : z >= -0.3 ? 'B-' :
+      z >= -0.6 ? 'C+' : z >= -1.0 ? 'C' : z >= -1.5 ? 'C-' :
+      z >= -2.0 ? 'D' : 'F';
+    teams.forEach(t => {
+      t.grades = {};
+      POSITIONS.forEach(pos => {
+        const { mean, std } = posStats[pos];
+        t.grades[pos] = letterGrade((t.posVal[pos] - mean) / std);
+      });
+    });
 
     // last season podium managers
     const podiumMgrs = (lastPodium || []).filter(Boolean).map(p => canonical(p.manager));
@@ -1440,12 +1486,11 @@
       const av = t.avatar
         ? `<img class="preview-avatar" src="${escHtml(t.avatar)}" alt="" onerror="this.style.display='none'">`
         : `<div class="preview-avatar avatar-fallback" style="display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;">${escHtml(t.manager[0].toUpperCase())}</div>`;
-      const playerRows = t.topPlayers.map(p => {
-        const info = p.info || {};
-        const pos = info.p || '?';
-        return `<div class="preview-player">
-          <span class="pp-pos ${escHtml(pos)}">${escHtml(pos)}</span>
-          <span class="pp-name">${escHtml(info.n || p.pid)}</span>
+      const gradeCells = ['QB', 'RB', 'WR', 'TE'].map(pos => {
+        const g = t.grades[pos] || '–';
+        return `<div class="grade-cell">
+          <span class="grade-pos">${pos}</span>
+          <span class="grade grade-${g[0].toLowerCase()}">${g}</span>
         </div>`;
       }).join('');
       return `
@@ -1460,7 +1505,7 @@
           </div>
           <div class="assess-badge ${a.cls}">${a.emoji} ${escHtml(a.label)}</div>
           <div class="assess-tagline">${escHtml(a.tagline)}</div>
-          <div class="preview-players">${playerRows}</div>
+          <div class="grade-grid">${gradeCells}</div>
         </div>`;
     }).join('');
 
