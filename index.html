@@ -1,12 +1,1108 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dynasty Hall of Fame</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dynasty Hall of Fame</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Georgia:wght@400;700&display=swap');
+
+    :root {
+      --gold: #f5c842;
+      --gold-light: #ffe88a;
+      --gold-dark: #c9971f;
+      --silver: #c0c0c0;
+      --silver-dark: #888;
+      --bronze: #cd7f32;
+      --bronze-dark: #a0622a;
+      --wood-dark: #1e0d05;
+      --wood-mid: #3a1a08;
+      --wood-light: #5c2d10;
+      --wood-highlight: #7a4020;
+      --felt: #0b1f0b;
+      --felt-light: #122612;
+      --bg: #120a04;
+      --surface: #1e0d05;
+      --surface2: #2a1208;
+      --text: #f0e8d8;
+      --muted: #9a8060;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        repeating-linear-gradient(
+          92deg,
+          transparent 0px, transparent 3px,
+          rgba(92,45,16,0.08) 3px, rgba(92,45,16,0.08) 4px
+        ),
+        repeating-linear-gradient(
+          180deg,
+          transparent 0px, transparent 18px,
+          rgba(30,13,5,0.4) 18px, rgba(30,13,5,0.4) 19px
+        );
+      color: var(--text);
+      font-family: Georgia, 'Times New Roman', serif;
+      min-height: 100vh;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 60px 20px 50px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%),
+        repeating-linear-gradient(
+          88deg,
+          transparent 0px, transparent 2px,
+          rgba(92,45,16,0.15) 2px, rgba(92,45,16,0.15) 3px
+        ),
+        linear-gradient(180deg, #2a0e02 0%, #3d1a08 50%, #2a0e02 100%);
+      border-bottom: 4px solid var(--wood-highlight);
+      border-top: none;
+      box-shadow:
+        0 4px 0 #7a4020,
+        0 5px 0 #3a1a08,
+        0 6px 20px rgba(0,0,0,0.8),
+        inset 0 1px 0 rgba(255,220,150,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(245,200,66,0.6), transparent);
+    }
+    .trophy-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 20px rgba(245,200,66,0.6));
+      animation: glow-pulse 3s ease-in-out infinite;
+    }
+    @keyframes glow-pulse {
+      0%, 100% { filter: drop-shadow(0 0 20px rgba(245,200,66,0.6)); }
+      50% { filter: drop-shadow(0 0 35px rgba(245,200,66,0.9)); }
+    }
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.8rem, 5vw, 3.8rem);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+      text-shadow:
+        0 1px 0 #fff8d0,
+        0 2px 0 #c9971f,
+        0 3px 0 #a0750f,
+        0 4px 8px rgba(0,0,0,0.8);
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: clamp(0.85rem, 2vw, 1.05rem);
+      color: var(--muted);
+      letter-spacing: 0.12em;
+    }
+
+    /* ── NAV ── */
+    .topnav {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-top: 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .navlink {
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      text-decoration: none;
+      color: #c9a96e;
+      padding: 10px 24px;
+      background: linear-gradient(180deg, #4a2010 0%, #2e1006 100%);
+      border: 2px solid #7a4020;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      margin-right: 3px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,220,150,0.15),
+        inset 0 -2px 4px rgba(0,0,0,0.4);
+      transition: all 0.15s;
+    }
+    .navlink:hover {
+      color: var(--gold);
+      background: linear-gradient(180deg, #6a3018 0%, #4a1e08 100%);
+    }
+    .navlink.active {
+      color: var(--gold);
+      background: linear-gradient(180deg, #7a4020 0%, #5c2d10 100%);
+      border-color: #a06030;
+      font-weight: 700;
+      box-shadow:
+        inset 0 1px 0 rgba(255,220,150,0.25),
+        0 2px 0 #5c2d10;
+    }
+
+    /* ── LOADING / ERROR ── */
+    #loading {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(245,200,66,0.2);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── TROPHY CASE ── */
+    #trophy-case {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 20px 0;
+    }
+    .tc-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 #fff8c0;
+    }
+    .tc-sub {
+      text-align: center;
+      color: var(--muted);
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    /* The physical cabinet wrapper */
+    .tc-cabinet {
+      position: relative;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          rgba(92,45,16,0.22) 0px, rgba(92,45,16,0.22) 1px,
+          transparent 1px, transparent 8px
+        ),
+        linear-gradient(180deg, #4a2010 0%, #3a1a08 20%, #2e1006 80%, #4a2010 100%);
+      border: 6px solid var(--wood-highlight);
+      border-radius: 4px;
+      box-shadow:
+        0 0 0 2px #7a4020,
+        0 0 0 4px #3a1a08,
+        0 0 0 6px #5c2d10,
+        0 12px 40px rgba(0,0,0,0.8),
+        inset 0 2px 0 rgba(255,220,150,0.2),
+        inset 0 -2px 0 rgba(0,0,0,0.6);
+      padding: 18px 18px 12px;
+    }
+
+    /* Spotlight bar at top of cabinet */
+    .tc-cabinet::before {
+      content: '';
+      position: absolute;
+      top: -2px; left: 10%; right: 10%;
+      height: 6px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255,240,180,0.6) 20%,
+        rgba(255,240,180,0.9) 35%,
+        rgba(255,255,200,1) 50%,
+        rgba(255,240,180,0.9) 65%,
+        rgba(255,240,180,0.6) 80%,
+        transparent 100%
+      );
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 2px 16px rgba(255,240,180,0.4), 0 0 8px rgba(255,240,180,0.3);
+    }
+
+    /* Felt interior */
+    .tc-interior {
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(255,255,200,0.06) 0%, transparent 60%),
+        repeating-linear-gradient(
+          135deg,
+          transparent 0px, transparent 2px,
+          rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+        ),
+        linear-gradient(180deg, #122612 0%, #0b1f0b 40%, #091a09 100%);
+      border: 3px solid #0a1a0a;
+      border-radius: 2px;
+      box-shadow:
+        inset 0 4px 20px rgba(0,0,0,0.7),
+        inset 0 0 0 1px rgba(255,255,255,0.04);
+      overflow: hidden;
+    }
+
+    .tc-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .tc-table thead th {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #8faf8f;
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.3);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .tc-table thead th.num { text-align: center; }
+    .tc-table tbody td {
+      padding: 13px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.95rem;
+      vertical-align: middle;
+      color: var(--text);
+    }
+    .tc-table tbody tr:last-child td { border-bottom: none; }
+    .tc-table tbody tr:hover { background: rgba(255,220,150,0.04); }
+    .tc-manager {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+    }
+    .tc-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--surface2); border: 2px solid #5c3010; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+    .tc-avatar.avatar-fallback { font-size: 0.9rem; }
+    .tc-count { text-align: center; font-weight: 700; font-size: 1.05rem; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+    .tc-count.zero { color: var(--muted); opacity: 0.4; }
+    .tc-rank-medal { font-size: 1.1rem; }
+
+    .tc-cobweb-row td { padding: 10px 18px; border-top: 1px dashed rgba(255,255,255,0.06); }
+    .tc-cobweb-line {
+      display: flex; align-items: center; gap: 10px; justify-content: center;
+      opacity: 0.45;
+    }
+    .cobweb-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .cobweb-names {
+      font-family: Georgia, serif; font-style: italic;
+      font-size: 0.82rem; color: var(--muted);
+      white-space: normal;
+    }
+
+    @media (max-width: 600px) {
+      .tc-avatar { width: 28px; height: 28px; }
+      .tc-manager { gap: 8px; }
+      .tc-cabinet { padding: 12px 12px 8px; }
+
+      /* Must reset the table/tbody display before flex can work on rows */
+      .tc-table,
+      .tc-table tbody { display: block; width: 100%; }
+      .tc-table thead { display: none; }
+
+      /* Single-line row: [avatar name · · · 🥇n 🥈n 🥉n total] */
+      .tc-table tbody tr {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        width: 100%;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 9px 4px;
+        gap: 6px;
+      }
+      .tc-table tbody tr:last-child { border-bottom: none; }
+      .tc-table tbody td {
+        display: block;
+        border-bottom: none !important;
+        padding: 0;
+      }
+      /* Manager takes all remaining space, truncate if needed */
+      .tc-table tbody td:first-child {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+      .tc-table tbody td:first-child .tc-manager span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      /* Each medal count: narrow fixed width */
+      .tc-table tbody td.tc-count {
+        flex: 0 0 28px;
+        text-align: center;
+        font-size: 0.82rem;
+        padding: 0;
+        white-space: nowrap;
+      }
+      /* Cobweb row spans full width */
+      .tc-cobweb-row td {
+        flex: 0 0 100% !important;
+        padding: 10px 4px !important;
+      }
+    }
+
+    /* ── SEASONS GRID ── */
+    #seasons {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 20px 100px;
+    }
+
+    .season-card {
+      background:
+        repeating-linear-gradient(
+          91deg,
+          transparent 0px, transparent 4px,
+          rgba(92,45,16,0.07) 4px, rgba(92,45,16,0.07) 5px
+        ),
+        linear-gradient(160deg, #2a1208 0%, #1e0d05 100%);
+      border: 4px solid var(--wood-highlight);
+      border-radius: 4px;
+      padding: 36px 36px 44px;
+      margin-bottom: 48px;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px #3a1a08,
+        0 0 0 3px #5c2d10,
+        0 8px 32px rgba(0,0,0,0.7),
+        inset 0 1px 0 rgba(255,220,150,0.08);
+    }
+    .season-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(245,200,66,0.5), transparent);
+    }
+
+    .season-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid rgba(92,45,16,0.6);
+      box-shadow: 0 1px 0 rgba(255,220,150,0.06);
+    }
+    .season-year {
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 #fff8c0;
+    }
+    .season-name {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .season-badge {
+      background: linear-gradient(135deg, #3a2000, #2a1500);
+      border: 2px solid rgba(245,200,66,0.5);
+      color: var(--gold);
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 3px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 rgba(255,220,150,0.15), 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .season-badge.current {
+      background: linear-gradient(135deg, #001a00, #002500);
+      border-color: rgba(100,200,100,0.5);
+      color: #7add7a;
+    }
+
+    /* ── PODIUM ── */
+    .podium {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 16px;
+    }
+
+    .podium-place {
+      flex: 1;
+      max-width: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .place-card {
+      width: 100%;
+      border-radius: 4px;
+      padding: 24px 18px 22px;
+      position: relative;
+      transition: transform 0.2s;
+    }
+    .place-card:hover { transform: translateY(-3px); }
+
+    /* Gold */
+    .place-1 .place-card {
+      background: linear-gradient(160deg, #2e1e00 0%, #1a1200 100%);
+      border: 3px solid #c9971f;
+      box-shadow:
+        0 0 0 1px #7a5c10,
+        0 6px 24px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,220,100,0.2),
+        inset 0 0 20px rgba(245,200,66,0.06);
+    }
+    /* Silver */
+    .place-2 .place-card {
+      background: linear-gradient(160deg, #1a1a1e 0%, #111114 100%);
+      border: 3px solid #888;
+      box-shadow:
+        0 0 0 1px #555,
+        0 6px 20px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(220,220,220,0.15),
+        inset 0 0 16px rgba(192,192,192,0.04);
+    }
+    /* Bronze */
+    .place-3 .place-card {
+      background: linear-gradient(160deg, #1e1004 0%, #120a00 100%);
+      border: 3px solid #a0622a;
+      box-shadow:
+        0 0 0 1px #6b3d18,
+        0 6px 20px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(205,127,50,0.15),
+        inset 0 0 16px rgba(205,127,50,0.04);
+    }
+
+    .medal {
+      font-size: 2.8rem;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+    }
+
+    .lombardi {
+      height: 78px;
+      width: auto;
+      display: block;
+      margin: 0 auto;
+      filter: drop-shadow(0 3px 10px rgba(245,200,66,0.45));
+      animation: trophy-float 3.5s ease-in-out infinite;
+    }
+    @keyframes trophy-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .avatar-wrap { margin-bottom: 12px; }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--surface2);
+    }
+    .place-1 .avatar {
+      width: 76px; height: 76px;
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 18px rgba(245,200,66,0.4), 0 3px 8px rgba(0,0,0,0.6);
+    }
+    .place-2 .avatar { border: 3px solid var(--silver); box-shadow: 0 0 12px rgba(192,192,192,0.25), 0 3px 8px rgba(0,0,0,0.6); }
+    .place-3 .avatar { border: 3px solid var(--bronze); box-shadow: 0 0 12px rgba(205,127,50,0.25), 0 3px 8px rgba(0,0,0,0.6); }
+    .avatar-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.6rem;
+      color: var(--text);
+    }
+
+    .place-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      font-weight: 700;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .place-1 .place-label { color: var(--gold); }
+    .place-2 .place-label { color: var(--silver); }
+    .place-3 .place-label { color: var(--bronze); }
+
+    .team-name {
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 6px;
+      color: #f8f0e0;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .place-1 .team-name { font-size: 1.1rem; }
+
+    .manager-name {
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    /* Podium base bars — carved wood steps */
+    .podium-bar {
+      width: 100%;
+      margin-top: 0;
+    }
+    .place-1 .podium-bar {
+      height: 80px;
+      background: linear-gradient(180deg, #4a3000 0%, #2e1e00 100%);
+      border: 2px solid #c9971f;
+      border-top: none;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .place-2 .podium-bar {
+      height: 54px;
+      background: linear-gradient(180deg, #2a2a2e 0%, #1a1a1e 100%);
+      border: 2px solid #888;
+      border-top: none;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .place-3 .podium-bar {
+      height: 36px;
+      background: linear-gradient(180deg, #2a1a08 0%, #1a0e04 100%);
+      border: 2px solid #a0622a;
+      border-top: none;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    /* ── MVP ── */
+    .mvp {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .mvp-row { display:flex; align-items:center; gap:10px; margin-top:4px; }
+    .mvp-avatar {
+      width: 46px; height: 46px; border-radius: 4px; object-fit: cover;
+      background: var(--surface2); flex-shrink: 0;
+      border: 2px solid rgba(245,200,66,0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+    .place-2 .mvp-avatar { border-color: rgba(192,192,192,0.3); }
+    .place-3 .mvp-avatar { border-color: rgba(205,127,50,0.3); }
+    .mvp-info { display:flex; flex-direction:column; gap:2px; min-width:0; }
+
+    .mvp-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 2px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .place-2 .mvp-tag { color: var(--silver); }
+    .place-3 .mvp-tag { color: var(--bronze); }
+    .mvp-name { font-family: Georgia, serif; font-size: 0.9rem; font-weight: 700; color: #f8f0e0; }
+    .mvp-meta { font-family: Georgia, serif; font-style: italic; font-size: 0.72rem; color: var(--muted); }
+
+    /* ── SEASON STORY — newspaper-style inset ── */
+    .season-story {
+      margin-top: 36px;
+      background:
+        repeating-linear-gradient(
+          91deg,
+          transparent 0px, transparent 3px,
+          rgba(92,45,16,0.06) 3px, rgba(92,45,16,0.06) 4px
+        ),
+        linear-gradient(160deg, #160800 0%, #0e0500 100%);
+      border: 3px solid #5c2d10;
+      border-radius: 2px;
+      padding: 22px 26px;
+      box-shadow:
+        0 0 0 1px #3a1a08,
+        inset 0 1px 0 rgba(255,220,150,0.06),
+        inset 0 0 20px rgba(0,0,0,0.4);
+    }
+    .story-head {
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(92,45,16,0.6);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .story-body {
+      font-family: Georgia, serif;
+      font-size: 0.94rem;
+      line-height: 1.75;
+      color: #d8c8a8;
+    }
+    .story-body b { color: var(--gold-light); font-weight: 700; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      /* Nav: wrap on small screens */
+      .topnav { flex-wrap: wrap; gap: 4px; margin-top: 20px; }
+      .navlink {
+        border-radius: 6px;
+        border: 2px solid #7a4020;
+        margin-right: 0;
+        padding: 10px 18px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+      }
+
+      .season-story { padding: 16px 18px; }
+      .story-body { font-size: 0.88rem; }
+      .season-card { padding: 20px 14px 28px; }
+
+      /* Podium: stack vertically 1st / 2nd / 3rd instead of side-by-side */
+      .podium {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 0;
+      }
+      .podium-place {
+        max-width: 100%;
+        width: 100%;
+      }
+      /* Re-order so champion is on top */
+      .place-1 { order: 1; }
+      .place-2 { order: 2; }
+      .place-3 { order: 3; }
+      /* Podium base bars look odd when stacked; hide them */
+      .podium-bar { display: none; }
+
+      .place-card { padding: 18px 14px 16px; }
+      .team-name { font-size: 0.9rem; }
+      .medal { font-size: 2rem; }
+      .lombardi { height: 60px; }
+      .avatar { width: 56px; height: 56px; }
+      .place-1 .avatar { width: 64px; height: 64px; }
+
+      /* MVP row: allow text to wrap */
+      .mvp-row { flex-wrap: wrap; }
+      .mvp-info { min-width: 0; flex: 1; }
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 0.82rem;
+      border-top: 3px solid #3a1a08;
+      background: linear-gradient(180deg, #0e0500 0%, #080300 100%);
+      box-shadow: inset 0 2px 0 rgba(92,45,16,0.4);
+    }
+    footer a {
+      color: var(--gold);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="trophy-icon">🏆</div>
+  <h1>Dynasty Hall of Fame</h1>
+  <p class="subtitle">The Immortalized Podium Finishers</p>
+  <nav class="topnav">
+    <a class="navlink active" href="index.html">🏆 Hall of Fame</a>
+  </nav>
+</div>
+
+<div id="loading">
+  <div class="spinner"></div>
+  Loading league history…
+</div>
+
+<div id="trophy-case" style="display:none;"></div>
+
+<div id="seasons" style="display:none;"></div>
+
+<footer>
+  Powered by the <a href="https://sleeper.com" target="_blank">Sleeper</a> API &nbsp;·&nbsp; Dynasty Hall of Fame
+</footer>
+
+<script>
+  const ROOT_LEAGUE_ID = '1312911602885890048';
+  const API = 'https://api.sleeper.app/v1';
+
+  const MEDAL = ['🥇','🥈','🥉'];
+  const PLACE_LABEL = ['Champion','Runner-Up','Third Place'];
+
+  // Lombardi-style championship trophy (football atop a tapered concave spire + base)
+  const LOMBARDI_SVG = `
+    <svg class="lombardi" viewBox="0 0 80 124" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Championship Trophy">
+      <defs>
+        <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff1b0"/>
+          <stop offset="0.45" stop-color="#f5c842"/>
+          <stop offset="1" stop-color="#b8881a"/>
+        </linearGradient>
+        <linearGradient id="goldShine" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Football -->
+      <g transform="rotate(-12 40 23)">
+        <ellipse cx="40" cy="23" rx="23" ry="11.5" fill="url(#goldGrad)" stroke="#7d5e10" stroke-width="1.2"/>
+        <ellipse cx="33" cy="19" rx="11" ry="4" fill="url(#goldShine)"/>
+        <path d="M19 23 H61" stroke="#7d5e10" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M34 23 H46" stroke="#7d5e10" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M36 20 V26 M40 20 V26 M44 20 V26" stroke="#7d5e10" stroke-width="1.1" stroke-linecap="round"/>
+      </g>
+      <!-- Neck connecting football to spire -->
+      <path d="M35 33 H45 L43.5 40 H36.5 Z" fill="url(#goldGrad)" stroke="#7d5e10" stroke-width="1.2"/>
+      <!-- Spire (concave sides, flat-ish top so it doesn't pinch) -->
+      <path d="M35.5 40 C 34 58, 30 78, 23 95 L 57 95 C 50 78, 46 58, 44.5 40 Z"
+            fill="url(#goldGrad)" stroke="#7d5e10" stroke-width="1.2"/>
+      <path d="M37 43 C 35.5 60, 32 78, 27 93" fill="none" stroke="url(#goldShine)" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Base tiers -->
+      <rect x="19" y="95"  width="42" height="9"  rx="2.5" fill="url(#goldGrad)" stroke="#7d5e10" stroke-width="1.2"/>
+      <rect x="13" y="104" width="54" height="11" rx="3"   fill="url(#goldGrad)" stroke="#7d5e10" stroke-width="1.2"/>
+    </svg>`;
+
+  // Precomputed per-season data: MVP (top scorer) per podium team + an AI-written
+  // story blurb. Keyed by league_id. MVPs keyed by roster_id.
+  const SEASON_DATA = {
+    // 2025 — Dynasty Year 3
+    '1215153730790363136': {
+      mvps: {
+        '7':  { name: 'Drake Maye',  pos: 'QB', team: 'NE',  pts: 343.7, pid: '11564' },
+        '10': { name: 'Jalen Hurts', pos: 'QB', team: 'PHI', pts: 307.1, pid: '6904'  },
+        '2':  { name: 'Josh Allen',  pos: 'QB', team: 'BUF', pts: 374.6, pid: '4984'  },
+      },
+      blurb: "The story of the season was a collapse for the ages: chamurph's <b>JJ, JJ, JC, JC, &amp; CD</b> bulldozed the regular season at 13–1 and locked up the #1 overall seed — then fell by a heartbreaking <b>8.4 points</b> in the semifinals and dropped the third-place game to finish a gutting 4th. Meanwhile the #3-seed <b>avocados4tom</b> caught fire at the perfect time, toppling Josh Allen's Stroud Boys in the semis before detonating CroatCoachesAssociation <b>172.5–100.6</b> in the title game behind Drake Maye's 343-point breakout. jjurkovich's <b>CroatCoachesAssociation</b> authored its own Cinderella run — upsetting the top seed — only to run into a buzzsaw in the final.",
+    },
+    // 2024 — Dynasty Year 2
+    '1062418193391632384': {
+      mvps: {
+        '2': { name: 'Josh Allen',     pos: 'QB', team: 'BUF', pts: 385.0, pid: '4984'  },
+        '3': { name: 'Jayden Daniels', pos: 'QB', team: 'WAS', pts: 360.6, pid: '11566' },
+        '7': { name: 'Lamar Jackson',  pos: 'QB', team: 'BAL', pts: 411.4, pid: '4881'  },
+      },
+      blurb: "Back-to-back heartbreak for nodogg21, who earned the #1 seed at 11–3 only to finish runner-up again — a second straight silver so painful he renamed his team <b>Not Taking 2nd Next Year</b> heading into Year 3. <b>Stroud Boys Let's Ride</b> (Smoore1759) went back-to-back, surging from the #3 seed behind another monster Josh Allen campaign (385 pts) and a statement semifinal over avocados4tom. Lamar Jackson's <b>league-best 411-point</b> season carried avocados4tom to a third-place finish, while cre8 came within 3.8 points of crashing the bracket.",
+    },
+    // 2023 — Dynasty Year 1 (inaugural)
+    '920927124263874560': {
+      mvps: {
+        '2': { name: 'Josh Allen',     pos: 'QB', team: 'BUF', pts: 385.6, pid: '4984' },
+        '3': { name: 'Raheem Mostert', pos: 'RB', team: 'MIA', pts: 255.2, pid: '2749' },
+        '5': { name: 'CeeDee Lamb',    pos: 'WR', team: 'DAL', pts: 306.7, pid: '6786' },
+      },
+      blurb: "The inaugural season crowned <b>Stroud Boys Let's Ride</b> (Smoore1759) as the league's first-ever champion — fittingly powered by Josh Allen (385 pts) — despite entering the playoffs as just the #3 seed. nodogg21's <b>Win It For Kirk</b> reached the final but came up short, the first chapter of back-to-back runner-up heartbreak. cre8 claimed third in a 6.2-point nail-biter over ellenwei17, riding CeeDee Lamb's 306-point year, after tight semifinals decided the bracket.",
+    },
+  };
+
+  async function fetchJSON(url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${url}`);
+    return r.json();
+  }
+
+  async function getLeagueChain(startId) {
+    const chain = [];
+    let id = startId;
+    while (id && id !== '0') {
+      const league = await fetchJSON(`${API}/league/${id}`);
+      chain.push(league);
+      id = league.previous_league_id;
+    }
+    return chain; // newest first
+  }
+
+  async function getPodium(leagueId) {
+    const [bracket, rosters, users] = await Promise.all([
+      fetchJSON(`${API}/league/${leagueId}/winners_bracket`),
+      fetchJSON(`${API}/league/${leagueId}/rosters`),
+      fetchJSON(`${API}/league/${leagueId}/users`),
+    ]);
+
+    // Build lookup maps
+    const rosterToOwner = {};
+    rosters.forEach(r => { rosterToOwner[r.roster_id] = r.owner_id; });
+
+    const userMap = {};
+    users.forEach(u => { userMap[u.user_id] = u; });
+
+    // Find championship (p:1) and 3rd place (p:3) matches
+    let champ = null, third = null;
+    bracket.forEach(m => {
+      if (m.p === 1) champ = m;
+      if (m.p === 3) third = m;
+    });
+
+    if (!champ) return null;
+
+    const podiumRosterIds = [
+      champ.w,                          // 1st
+      champ.l,                          // 2nd
+      third ? third.w : null,           // 3rd
+    ];
+
+    return podiumRosterIds.map((rosterId, i) => {
+      if (!rosterId) return null;
+      const ownerId = rosterToOwner[rosterId];
+      const user = userMap[ownerId] || {};
+      const teamName = user.metadata?.team_name || user.display_name || 'Unknown';
+      const manager = user.display_name || 'Unknown';
+      const avatar = avatarUrl(user);
+      return { place: i + 1, teamName, manager, rosterId, avatar };
+    });
+  }
+
+  function avatarUrl(user) {
+    // Prefer custom team logo, fall back to user avatar, then null
+    const custom = user.metadata?.avatar;
+    if (custom) return custom;
+    if (user.avatar) return `https://sleepercdn.com/avatars/${user.avatar}`;
+    return null;
+  }
+
+  function avatarHtml(p, cls) {
+    if (p.avatar) {
+      return `<img class="${cls}" src="${escHtml(p.avatar)}" alt="" loading="lazy"
+                onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'${cls} avatar-fallback',textContent:'${escHtml((p.teamName||'?')[0].toUpperCase())}'}))" />`;
+    }
+    return `<div class="${cls} avatar-fallback">${escHtml((p.teamName||'?')[0].toUpperCase())}</div>`;
+  }
+
+  function renderSeason(league, podium) {
+    const isActive = league.status === 'in_season' || league.status === 'pre_draft';
+
+    const card = document.createElement('div');
+    card.className = 'season-card';
+
+    const badgeClass = isActive ? 'season-badge current' : 'season-badge';
+    const badgeText = isActive ? 'Current Season' : 'Final';
+
+    card.innerHTML = `
+      <div class="season-header">
+        <div>
+          <div class="season-year">${league.season} Season</div>
+          <div class="season-name">${league.name}</div>
+        </div>
+        <span class="${badgeClass}">${badgeText}</span>
+      </div>
+      ${isActive || !podium
+        ? `<div style="text-align:center;padding:40px 0;color:var(--muted);font-size:0.95rem;">
+             ${isActive ? '⏳ Season in progress — check back after the championship.' : 'Results unavailable.'}
+           </div>`
+        : renderPodium(podium, league.league_id) + renderBlurb(league.league_id)
+      }
+    `;
+    return card;
+  }
+
+  function renderBlurb(leagueId) {
+    const data = SEASON_DATA[leagueId];
+    if (!data || !data.blurb) return '';
+    return `
+      <div class="season-story">
+        <div class="story-head">📖 The Season in Review</div>
+        <p class="story-body">${data.blurb}</p>
+      </div>`;
+  }
+
+  function mvpHtml(leagueId, rosterId) {
+    const data = SEASON_DATA[leagueId];
+    const mvp = data && data.mvps ? data.mvps[String(rosterId)] : null;
+    if (!mvp) return '';
+    const thumb = mvp.pid ? `https://sleepercdn.com/content/nfl/players/thumb/${mvp.pid}.jpg` : null;
+    const imgTag = thumb
+      ? `<img class="mvp-avatar" src="${escHtml(thumb)}" alt="${escHtml(mvp.name)}" loading="lazy"
+           onerror="this.style.display='none'" />`
+      : '';
+    return `
+      <div class="mvp">
+        <span class="mvp-tag">★ Team MVP</span>
+        <div class="mvp-row">
+          ${imgTag}
+          <div class="mvp-info">
+            <span class="mvp-name">${escHtml(mvp.name)}</span>
+            <span class="mvp-meta">${escHtml(mvp.pos)} · ${escHtml(mvp.team)} · ${mvp.pts.toFixed(1)} pts</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderPodium(podium, leagueId) {
+    // Order: 2nd, 1st, 3rd (visual podium layout)
+    const display = [podium[1], podium[0], podium[2]];
+    const cssClass = ['place-2', 'place-1', 'place-3'];
+    const medal = [MEDAL[1], LOMBARDI_SVG, MEDAL[2]];
+    const label = [PLACE_LABEL[1], PLACE_LABEL[0], PLACE_LABEL[2]];
+
+    const cols = display.map((p, i) => {
+      if (!p) return `<div class="podium-place ${cssClass[i]}"></div>`;
+      return `
+        <div class="podium-place ${cssClass[i]}">
+          <div class="place-card">
+            <div class="medal">${medal[i]}</div>
+            <div class="avatar-wrap">${avatarHtml(p, 'avatar')}</div>
+            <div class="place-label">${label[i]}</div>
+            <div class="team-name">${escHtml(p.teamName)}</div>
+            <div class="manager-name">@${escHtml(p.manager)}</div>
+            ${mvpHtml(leagueId, p.rosterId)}
+          </div>
+          <div class="podium-bar"></div>
+        </div>`;
+    }).join('');
+
+    return `<div class="podium">${cols}</div>`;
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderTrophyCase(seasons) {
+    // Aggregate medals per manager across completed seasons
+    const tally = {}; // key: manager -> {manager, avatar, golds, silvers, bronzes}
+    seasons.forEach(({ podium }) => {
+      if (!podium) return;
+      podium.forEach((p, i) => {
+        if (!p) return;
+        const key = p.manager;
+        if (!tally[key]) tally[key] = { manager: p.manager, avatar: p.avatar, g: 0, s: 0, b: 0 };
+        // keep latest non-null avatar
+        if (p.avatar) tally[key].avatar = p.avatar;
+        if (i === 0) tally[key].g++;
+        else if (i === 1) tally[key].s++;
+        else if (i === 2) tally[key].b++;
+      });
+    });
+
+    const rows = Object.values(tally);
+    if (!rows.length) return null;
+
+    // Sort: golds, then silvers, then bronzes
+    rows.sort((a, b) => b.g - a.g || b.s - a.s || b.b - a.b);
+
+    const completedCount = seasons.filter(s => s.podium).length;
+
+    const haveRows = rows.map(r => {
+      const total = r.g + r.s + r.b;
+      const av = avatarHtml({ avatar: r.avatar, teamName: r.manager }, 'tc-avatar');
+      return `
+        <tr>
+          <td><div class="tc-manager">${av}<span>@${escHtml(r.manager)}</span></div></td>
+          <td class="tc-count ${r.g ? '' : 'zero'}" data-label="Gold">${r.g ? '🥇 ' + r.g : '–'}</td>
+          <td class="tc-count ${r.s ? '' : 'zero'}" data-label="Silver">${r.s ? '🥈 ' + r.s : '–'}</td>
+          <td class="tc-count ${r.b ? '' : 'zero'}" data-label="Bronze">${r.b ? '🥉 ' + r.b : '–'}</td>
+        </tr>`;
+    });
+
+    // Collect all unique managers seen across all seasons
+    const allManagerNames = new Set();
+    seasons.forEach(({ league, podium }) => {
+      if (league._users) league._users.forEach(u => { if (u.display_name) allManagerNames.add(u.display_name); });
+    });
+    const zeroTrophy = [...allManagerNames].filter(m => !tally[m]);
+    let cobwebRow = '';
+    if (zeroTrophy.length) {
+      const names = zeroTrophy.map(m => `@${escHtml(m)}`).join(', ');
+      cobwebRow = `
+        <tr class="tc-cobweb-row">
+          <td colspan="4">
+            <div class="tc-cobweb-line">
+              <span class="cobweb-icon">🕸️</span>
+              <span class="cobweb-names">${names}</span>
+              <span class="cobweb-icon">🕸️</span>
+            </div>
+          </td>
+        </tr>`;
+    }
+
+    const body = haveRows.join('') + cobwebRow;
+
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="tc-title">🏛️ Trophy Case</div>
+      <div class="tc-sub">All-Time Podium Finishes · ${completedCount} Season${completedCount === 1 ? '' : 's'}</div>
+      <div class="tc-cabinet">
+        <div class="tc-interior">
+          <table class="tc-table">
+            <thead>
+              <tr>
+                <th>Manager</th>
+                <th class="num">Gold</th>
+                <th class="num">Silver</th>
+                <th class="num">Bronze</th>
+              </tr>
+            </thead>
+            <tbody>${body}</tbody>
+          </table>
+        </div>
+      </div>`;
+    return wrap;
+  }
+
+  async function main() {
+    try {
+      const chain = await getLeagueChain(ROOT_LEAGUE_ID);
+      const loadingEl = document.getElementById('loading');
+      const seasonsEl = document.getElementById('seasons');
+      const trophyEl = document.getElementById('trophy-case');
+
+      const seasons = [];
+      for (const league of chain) {
+        const isComplete = league.status === 'complete';
+        let podium = null;
+        let users = [];
+        try { users = await fetchJSON(`${API}/league/${league.league_id}/users`); } catch(e) {}
+        league._users = users;
+        if (isComplete) {
+          try { podium = await getPodium(league.league_id); } catch(e) {}
+        }
+        seasons.push({ league, podium });
+        const card = renderSeason(league, podium);
+        seasonsEl.appendChild(card);
+      }
+
+      const tc = renderTrophyCase(seasons);
+      if (tc) {
+        trophyEl.appendChild(tc);
+        trophyEl.style.display = 'block';
+      }
+
+      loadingEl.style.display = 'none';
+      seasonsEl.style.display = 'block';
+    } catch(err) {
+      document.getElementById('loading').innerHTML = `
+        <div style="color:#ff6060;">Error loading league data: ${err.message}</div>`;
+      console.error(err);
+    }
+  }
+
+  main();
+</script>
+</body>
 </html>
