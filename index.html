@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dynasty Year IV</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Georgia:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
     :root {
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
       --gold: #f5c842;
       --gold-light: #ffe88a;
       --gold-dark: #c9971f;
@@ -44,7 +46,7 @@
           rgba(30,13,5,0.4) 18px, rgba(30,13,5,0.4) 19px
         );
       color: var(--text);
-      font-family: Georgia, 'Times New Roman', serif;
+      font-family: var(--font-body);
       min-height: 100vh;
     }
 
@@ -87,7 +89,7 @@
       50% { filter: drop-shadow(0 0 35px rgba(245,200,66,0.9)); }
     }
     h1 {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: clamp(1.8rem, 5vw, 3.8rem);
       font-weight: 900;
       letter-spacing: 0.06em;
@@ -100,7 +102,7 @@
       margin-bottom: 10px;
     }
     .subtitle {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: clamp(0.85rem, 2vw, 1.05rem);
       color: var(--muted);
@@ -117,7 +119,7 @@
       z-index: 1;
     }
     .navlink {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.82rem;
       letter-spacing: 0.06em;
       text-decoration: none;
@@ -171,7 +173,7 @@
       padding: 60px 20px 0;
     }
     .tc-title {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 1.8rem;
       font-weight: 700;
       color: var(--gold);
@@ -183,7 +185,7 @@
     .tc-sub {
       text-align: center;
       color: var(--muted);
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.9rem;
       margin-bottom: 28px;
@@ -253,7 +255,7 @@
       border-collapse: collapse;
     }
     .tc-table thead th {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.7rem;
       letter-spacing: 0.15em;
       text-transform: uppercase;
@@ -298,7 +300,7 @@
     }
     .cobweb-icon { font-size: 1.1rem; flex-shrink: 0; }
     .cobweb-names {
-      font-family: Georgia, serif; font-style: italic;
+      font-family: var(--font-body); font-style: italic;
       font-size: 0.82rem; color: var(--muted);
       white-space: normal;
     }
@@ -367,7 +369,7 @@
 
     /* Shared section heading (Past Seasons, etc.) */
     .section-title {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 1.8rem;
       font-weight: 700;
       color: var(--gold);
@@ -379,7 +381,7 @@
     .section-sub {
       text-align: center;
       color: var(--muted);
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.9rem;
     }
@@ -428,14 +430,14 @@
       box-shadow: 0 1px 0 rgba(255,220,150,0.06);
     }
     .season-year {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 2rem;
       font-weight: 700;
       color: var(--gold);
       text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 0 #fff8c0;
     }
     .season-name {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.9rem;
       color: var(--muted);
@@ -444,7 +446,7 @@
       background: linear-gradient(135deg, #3a2000, #2a1500);
       border: 2px solid rgba(245,200,66,0.5);
       color: var(--gold);
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.72rem;
       font-weight: 700;
       padding: 5px 14px;
@@ -555,14 +557,14 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: 1.6rem;
       color: var(--text);
     }
 
     .place-label {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.65rem;
       letter-spacing: 0.18em;
       text-transform: uppercase;
@@ -575,7 +577,7 @@
     .place-3 .place-label { color: var(--bronze); }
 
     .team-name {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-size: 1rem;
       font-weight: 700;
       line-height: 1.3;
@@ -586,7 +588,7 @@
     .place-1 .team-name { font-size: 1.1rem; }
 
     .manager-name {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.82rem;
       color: var(--muted);
@@ -640,7 +642,7 @@
     .mvp-info { display:flex; flex-direction:column; gap:2px; min-width:0; }
 
     .mvp-tag {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.58rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
@@ -651,8 +653,8 @@
     }
     .place-2 .mvp-tag { color: var(--silver); }
     .place-3 .mvp-tag { color: var(--bronze); }
-    .mvp-name { font-family: Georgia, serif; font-size: 0.9rem; font-weight: 700; color: #f8f0e0; }
-    .mvp-meta { font-family: Georgia, serif; font-style: italic; font-size: 0.72rem; color: var(--muted); }
+    .mvp-name { font-family: var(--font-body); font-size: 0.9rem; font-weight: 700; color: #f8f0e0; }
+    .mvp-meta { font-family: var(--font-body); font-style: italic; font-size: 0.72rem; color: var(--muted); }
 
     /* ── SEASON STORY — newspaper-style inset ── */
     .season-story {
@@ -673,7 +675,7 @@
         inset 0 0 20px rgba(0,0,0,0.4);
     }
     .story-head {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.82rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
@@ -684,7 +686,7 @@
       text-shadow: 0 1px 3px rgba(0,0,0,0.7);
     }
     .story-body {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-size: 0.94rem;
       line-height: 1.75;
       color: #d8c8a8;
@@ -746,7 +748,7 @@
       padding: 60px 20px 0;
     }
     .preview-title {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 1.8rem;
       font-weight: 700;
       color: var(--gold);
@@ -758,7 +760,7 @@
     .preview-sub {
       text-align: center;
       color: var(--muted);
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.9rem;
       margin-bottom: 32px;
@@ -784,7 +786,7 @@
     .preview-rank {
       position: absolute;
       top: 10px; right: 12px;
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.7rem;
       font-weight: 700;
       color: var(--muted);
@@ -807,14 +809,14 @@
     }
     .preview-names { min-width: 0; }
     .preview-team {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-weight: 700;
       font-size: 0.88rem;
       color: #f8f0e0;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .preview-manager {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.72rem;
       color: var(--muted);
@@ -822,7 +824,7 @@
 
     .assess-badge {
       display: inline-block;
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.74rem;
       font-weight: 700;
       letter-spacing: 0.04em;
@@ -841,7 +843,7 @@
     .arch-rebuild    { background: rgba(100,120,160,0.12); color: #8090b8;       border: 1px solid rgba(100,120,160,0.3); }
 
     .assess-tagline {
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.74rem;
       line-height: 1.4;
@@ -852,7 +854,7 @@
     }
 
     .preview-live {
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.1em;
@@ -879,7 +881,7 @@
     }
     .grade-pos {
       display: block;
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-size: 0.56rem;
       letter-spacing: 0.1em;
       color: var(--muted);
@@ -887,7 +889,7 @@
     }
     .grade {
       display: block;
-      font-family: 'Cinzel', serif;
+      font-family: var(--font-display);
       font-weight: 700;
       font-size: 1.15rem;
       line-height: 1;
@@ -909,7 +911,7 @@
       text-align: center;
       padding: 40px 20px;
       color: var(--muted);
-      font-family: Georgia, serif;
+      font-family: var(--font-body);
       font-style: italic;
       font-size: 0.82rem;
       border-top: 3px solid #3a1a08;
@@ -1418,66 +1420,91 @@
     const ages = teams.map(t => t.starterAge).filter(a => a != null);
     const leagueAge = ages.length ? ages.reduce((s, a) => s + a, 0) / ages.length : 26;
 
-    const depthClause = {
-      deep:     'Loaded with depth — reinforcements at every turn.',
-      topheavy: 'Top-heavy, though — a star core with little behind it.',
-      balanced: 'A balanced build with no glaring holes.',
-    };
+    // Contention window from starter age (younger = opening, older = closing)
+    teams.forEach(t => {
+      t.windowDir = t.starterAge == null ? 'peak'
+                  : t.starterAge >= leagueAge + 0.6 ? 'close'
+                  : t.starterAge <= leagueAge - 0.6 ? 'open'
+                  : 'peak';
+      t.tier = t.dynRank <= 3 ? 'top' : t.dynRank <= 6 ? 'mid' : 'bot';
+    });
 
-    // Combined team assessment: dynasty tier (strength) × starter-age window × pedigree,
-    // with a depth note woven into every tagline.
+    // The verdict label/emoji/color — strength tier × age window × pedigree.
     const assess = t => {
       const wasChamp = t.manager === lastChamp;
       const ring     = t.titles >= 1;
       const proven   = t.podiums >= 2;
-      const dir = t.starterAge == null ? 'peak'
-                : t.starterAge >= leagueAge + 0.6 ? 'close'
-                : t.starterAge <= leagueAge - 0.6 ? 'open'
-                : 'peak';
-      const tier = t.dynRank <= 3 ? 'top' : t.dynRank <= 6 ? 'mid' : 'bot';
-      const depth = depthOf(t);
-      const note = ' ' + depthClause[depth];
-
-      let v;
+      const dir = t.windowDir, tier = t.tier;
       if (tier === 'top') {
-        if (dir === 'close')
-          v = ring ? { label: 'Fading Dynasty', emoji: '🌅', cls: 'arch-winnow', tagline: 'Pedigree and firepower, but an aging core. Win now.' }
-                   : { label: 'Win-Now Window', emoji: '⚡', cls: 'arch-winnow', tagline: 'Veteran-laden and loaded. This is the year to cash in.' };
-        else if (wasChamp)
-          v = { label: 'Reigning Powerhouse', emoji: '👑', cls: 'arch-defending', tagline: 'Defending champ, stacked and balanced. The hunted.' };
-        else if (dir === 'open')
-          v = ring ? { label: 'Budding Dynasty', emoji: '🌟', cls: 'arch-riser', tagline: 'A title pedigree and a young, rising core. Scary.' }
-                   : { label: 'Rising Juggernaut', emoji: '🚀', cls: 'arch-riser', tagline: 'Young, elite, and only getting scarier. Buckle up.' };
-        else if (t.dynRank === 1)
-          v = { label: 'Powerhouse', emoji: '💪', cls: 'arch-contender', tagline: 'Stacked across the board. The team to beat.' };
-        else
-          v = proven ? { label: 'Perennial Contender', emoji: '🏆', cls: 'arch-contender', tagline: 'Always in the hunt, year after year.' }
-                     : { label: 'Bona Fide Contender', emoji: '🏆', cls: 'arch-contender', tagline: 'A real shot at the throne if the chips fall right.' };
-      } else if (tier === 'mid') {
-        if (dir === 'close')
-          v = { label: 'Last Dance', emoji: '⏰', cls: 'arch-winnow', tagline: 'A veteran core making one final push before the rebuild.' };
-        else if (dir === 'open')
-          v = { label: 'Dark Horse', emoji: '🐎', cls: 'arch-riser', tagline: "Quietly building something. Don't sleep on them." };
-        else
-          v = { label: 'Playoff Hopeful', emoji: '🎯', cls: 'arch-threat', tagline: 'Squarely in the mix. A break or two from a real run.' };
-      } else {
-        if (dir === 'close')
-          v = ring ? { label: 'Fallen Dynasty', emoji: '🏚️', cls: 'arch-faller', tagline: 'Former glory, now aging and adrift. Time to reset.' }
-                   : { label: 'Fire Sale', emoji: '🔥', cls: 'arch-faller', tagline: 'Aging and adrift. Sell the parts and reset.' };
-        else if (dir === 'open')
-          v = { label: 'Future Threat', emoji: '🌱', cls: 'arch-rebuild', tagline: 'Stockpiling youth. The future is the whole plan.' };
-        else if (t.dynRank === 7)
-          v = { label: 'Long Shot', emoji: '🎲', cls: 'arch-bubble', tagline: 'On the outside looking in. Needs a few breaks to sneak in.' };
-        else if (t.dynRank >= 10)
-          v = { label: 'Ragtag Group', emoji: '🃏', cls: 'arch-bubble', tagline: 'Bottom of the barrel. Hoping to catch lightning in a bottle.' };
-        else
-          v = { label: 'Rebuilding', emoji: '🔄', cls: 'arch-rebuild', tagline: 'Building from the studs up. Patience is the whole plan.' };
+        if (dir === 'close') return ring ? { label: 'Fading Dynasty', emoji: '🌅', cls: 'arch-winnow' }
+                                          : { label: 'Win-Now Window', emoji: '⚡', cls: 'arch-winnow' };
+        if (wasChamp)         return { label: 'Reigning Powerhouse', emoji: '👑', cls: 'arch-defending' };
+        if (dir === 'open')   return ring ? { label: 'Budding Dynasty', emoji: '🌟', cls: 'arch-riser' }
+                                          : { label: 'Rising Juggernaut', emoji: '🚀', cls: 'arch-riser' };
+        if (t.dynRank === 1)  return { label: 'Powerhouse', emoji: '💪', cls: 'arch-contender' };
+        return proven ? { label: 'Perennial Contender', emoji: '🏆', cls: 'arch-contender' }
+                      : { label: 'Bona Fide Contender', emoji: '🏆', cls: 'arch-contender' };
       }
-      v.tagline += note;
-      return v;
+      if (tier === 'mid') {
+        if (dir === 'close')  return { label: 'Last Dance', emoji: '⏰', cls: 'arch-winnow' };
+        if (dir === 'open')   return { label: 'Dark Horse', emoji: '🐎', cls: 'arch-riser' };
+        return { label: 'Playoff Hopeful', emoji: '🎯', cls: 'arch-threat' };
+      }
+      if (dir === 'close')    return ring ? { label: 'Fallen Dynasty', emoji: '🏚️', cls: 'arch-faller' }
+                                          : { label: 'Fire Sale', emoji: '🔥', cls: 'arch-faller' };
+      if (dir === 'open')     return { label: 'Future Threat', emoji: '🌱', cls: 'arch-rebuild' };
+      if (t.dynRank === 7)    return { label: 'Long Shot', emoji: '🎲', cls: 'arch-bubble' };
+      if (t.dynRank >= 10)    return { label: 'Ragtag Group', emoji: '🃏', cls: 'arch-bubble' };
+      return { label: 'Rebuilding', emoji: '🔄', cls: 'arch-rebuild' };
     };
 
-    teams.forEach(t => { t.assessment = assess(t); });
+    // Cohesive, team-specific blurb woven from window, position grades, depth, and pedigree.
+    const GVAL = { 'A+':12,'A':11,'A-':10,'B+':9,'B':8,'B-':7,'C+':6,'C':5,'C-':4,'D':2,'F':0 };
+    const makeTagline = t => {
+      const entries = POSITIONS.map(p => ({ p, v: GVAL[t.grades[p]] ?? 5 }));
+      const best  = entries.reduce((a, b) => b.v > a.v ? b : a);
+      const worst = entries.reduce((a, b) => b.v < a.v ? b : a);
+      const dir = t.windowDir, tier = t.tier;
+      const ring = t.titles >= 1, proven = t.podiums >= 2;
+
+      // Situational lead (no claims that the position callout might contradict)
+      let lead;
+      if (tier === 'top') {
+        lead = t.manager === lastChamp ? 'The defending champ reloads'
+             : dir === 'close' ? (ring ? 'A proven roster running low on runway' : 'A win-now veteran group')
+             : dir === 'open'  ? 'A rising young powerhouse'
+             : proven ? 'A perennial title threat' : 'A genuine title threat';
+      } else if (tier === 'mid') {
+        lead = dir === 'close' ? 'An aging mid-pack squad'
+             : dir === 'open'  ? 'A youthful team trending up'
+             : 'A fringe playoff hopeful';
+      } else {
+        lead = dir === 'close' ? (ring ? 'A faded former contender' : 'An old roster due for a reset')
+             : dir === 'open'  ? 'A youth-loaded rebuild'
+             : 'A rebuild still taking shape';
+      }
+
+      // Position-specific body (varies team to team)
+      const strong = best.v >= 11 ? `elite at ${best.p}`
+                   : best.v >= 9  ? `strong at ${best.p}`
+                   : best.v >= 7  ? `steady at ${best.p}` : null;
+      const weak = worst.v <= 2 ? `a gaping hole at ${worst.p}`
+                 : worst.v <= 5 ? `a soft spot at ${worst.p}` : null;
+      let body;
+      if (strong && weak)      body = `${strong}, but ${weak}`;
+      else if (strong)         body = strong;
+      else if (weak)           body = `little to lean on and ${weak}`;
+      else                     body = 'a roster of middling, interchangeable parts';
+
+      // Depth tail only when notable, so it isn't repeated everywhere
+      const depth = depthOf(t);
+      const tail = depth === 'deep' ? ' Real depth behind the starters.'
+                 : depth === 'topheavy' ? ' Dangerously thin past the top.' : '';
+
+      return `${lead} — ${body}.${tail}`;
+    };
+
+    teams.forEach(t => { t.assessment = assess(t); t.tagline = makeTagline(t); });
 
     const cards = teams.map((t, i) => {
       const rank = i + 1;
@@ -1485,7 +1512,7 @@
       const a = t.assessment;
       const av = t.avatar
         ? `<img class="preview-avatar" src="${escHtml(t.avatar)}" alt="" onerror="this.style.display='none'">`
-        : `<div class="preview-avatar avatar-fallback" style="display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;">${escHtml(t.manager[0].toUpperCase())}</div>`;
+        : `<div class="preview-avatar avatar-fallback" style="display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:1.1rem;">${escHtml(t.manager[0].toUpperCase())}</div>`;
       const gradeCells = ['QB', 'RB', 'WR', 'TE'].map(pos => {
         const g = t.grades[pos] || '–';
         return `<div class="grade-cell">
@@ -1504,7 +1531,7 @@
             </div>
           </div>
           <div class="assess-badge ${a.cls}">${a.emoji} ${escHtml(a.label)}</div>
-          <div class="assess-tagline">${escHtml(a.tagline)}</div>
+          <div class="assess-tagline">${escHtml(t.tagline)}</div>
           <div class="grade-grid">${gradeCells}</div>
         </div>`;
     }).join('');
