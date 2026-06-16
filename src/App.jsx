@@ -16,18 +16,16 @@ export default function App() {
     async function main() {
       try {
         const chain = await getLeagueChain(ROOT_LEAGUE_ID)
-        const result = []
 
         for (const league of chain) {
           const isComplete = league.status === 'complete'
           let podium = null
           let users = []
-          try { users = await fetchJSON(`${API}/league/${league.league_id}/users`) } catch (e) {}
+          try { users = await fetchJSON(`${API}/league/${league.league_id}/users`) } catch (_) { /* best-effort */ }
           league._users = users
           if (isComplete) {
-            try { podium = await getPodium(league.league_id) } catch (e) {}
+            try { podium = await getPodium(league.league_id) } catch (_) { /* best-effort */ }
           }
-          result.push({ league, podium })
           // Update state progressively so cards appear as they load
           setSeasons(prev => [...prev, { league, podium }])
         }
@@ -48,7 +46,7 @@ export default function App() {
 
       {loading && (
         <div id="loading">
-          <div className="spinner"></div>
+          <div className="spinner" />
           Loading league history…
         </div>
       )}
@@ -74,7 +72,7 @@ export default function App() {
       <footer>
         Powered by the{' '}
         <a href="https://sleeper.com" target="_blank" rel="noreferrer">Sleeper</a>
-        {' '}API &nbsp;·&nbsp; Dynasty Hall of Fame
+        {' '}API &nbsp;&middot;&nbsp; Dynasty Hall of Fame
       </footer>
     </>
   )
