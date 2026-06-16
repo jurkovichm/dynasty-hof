@@ -303,14 +303,15 @@
       .tc-manager { gap: 8px; }
       .tc-cabinet { padding: 12px 12px 8px; }
 
-      /* Stack each row as a card: manager full-width, medals in a flex row below */
+      /* Single-line row: [avatar name] ........... [🥇n 🥈n 🥉n total] */
       .tc-table thead { display: none; }
       .tc-table tbody tr {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         align-items: center;
         border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding: 10px 4px;
+        padding: 9px 4px;
+        gap: 6px;
       }
       .tc-table tbody tr:last-child { border-bottom: none; }
       .tc-table tbody td {
@@ -318,34 +319,28 @@
         border-bottom: none !important;
         padding: 0;
       }
-      /* Manager row spans full width */
+      /* Manager takes all remaining space, truncate if needed */
       .tc-table tbody td:first-child {
-        flex: 0 0 100%;
-        padding-bottom: 8px;
+        flex: 1 1 0;
+        min-width: 0;
       }
-      /* Medal/total counts share equal space in one row */
+      .tc-table tbody td:first-child .tc-manager span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      /* Each medal count: narrow fixed width, no label */
       .tc-table tbody td.tc-count {
-        flex: 1;
+        flex: 0 0 28px;
         text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 3px;
-        font-size: 0.9rem;
-        padding: 2px 0;
-      }
-      .tc-table tbody td.tc-count::before {
-        content: attr(data-label);
-        font-family: 'Cinzel', serif;
-        font-size: 0.55rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
+        font-size: 0.82rem;
+        padding: 0;
+        white-space: nowrap;
       }
       /* Cobweb row stays full-width */
       .tc-cobweb-row td {
         flex: 0 0 100% !important;
-        padding: 10px 8px !important;
+        padding: 10px 4px !important;
       }
     }
 
