@@ -302,6 +302,10 @@
       .tc-table tbody td, .tc-table thead th { padding: 10px 8px; font-size: 0.82rem; }
       .tc-avatar { width: 28px; height: 28px; }
       .tc-manager { gap: 8px; }
+      /* Allow trophy table to scroll horizontally instead of squishing */
+      .tc-cabinet { padding: 12px 12px 8px; }
+      .tc-interior { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .tc-table { min-width: 340px; }
     }
 
     /* ── SEASONS GRID ── */
@@ -616,13 +620,50 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
-      .podium { gap: 8px; padding: 0; }
+      /* Nav: wrap on small screens */
+      .topnav { flex-wrap: wrap; gap: 4px; margin-top: 20px; }
+      .navlink {
+        border-radius: 6px;
+        border: 2px solid #7a4020;
+        margin-right: 0;
+        padding: 10px 18px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+      }
+
       .season-story { padding: 16px 18px; }
       .story-body { font-size: 0.88rem; }
-      .season-card { padding: 24px 16px 32px; }
-      .place-card { padding: 18px 12px 16px; }
-      .team-name { font-size: 0.85rem; }
+      .season-card { padding: 20px 14px 28px; }
+
+      /* Podium: stack vertically 1st / 2nd / 3rd instead of side-by-side */
+      .podium {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 0;
+      }
+      .podium-place {
+        max-width: 100%;
+        width: 100%;
+      }
+      /* Re-order so champion is on top */
+      .place-1 { order: 1; }
+      .place-2 { order: 2; }
+      .place-3 { order: 3; }
+      /* Podium base bars look odd when stacked; hide them */
+      .podium-bar { display: none; }
+
+      .place-card { padding: 18px 14px 16px; }
+      .team-name { font-size: 0.9rem; }
       .medal { font-size: 2rem; }
+      .lombardi { height: 60px; }
+      .avatar { width: 56px; height: 56px; }
+      .place-1 .avatar { width: 64px; height: 64px; }
+
+      /* MVP row: allow text to wrap */
+      .mvp-row { flex-wrap: wrap; }
+      .mvp-info { min-width: 0; flex: 1; }
     }
 
     /* ── FOOTER ── */
