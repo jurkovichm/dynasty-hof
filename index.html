@@ -303,12 +303,17 @@
       .tc-manager { gap: 8px; }
       .tc-cabinet { padding: 12px 12px 8px; }
 
-      /* Single-line row: [avatar name] ........... [🥇n 🥈n 🥉n total] */
+      /* Must reset the table/tbody display before flex can work on rows */
+      .tc-table,
+      .tc-table tbody { display: block; width: 100%; }
       .tc-table thead { display: none; }
+
+      /* Single-line row: [avatar name · · · 🥇n 🥈n 🥉n total] */
       .tc-table tbody tr {
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
+        width: 100%;
         border-bottom: 1px solid rgba(255,255,255,0.06);
         padding: 9px 4px;
         gap: 6px;
@@ -329,7 +334,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      /* Each medal count: narrow fixed width, no label */
+      /* Each medal count: narrow fixed width */
       .tc-table tbody td.tc-count {
         flex: 0 0 28px;
         text-align: center;
@@ -337,7 +342,7 @@
         padding: 0;
         white-space: nowrap;
       }
-      /* Cobweb row stays full-width */
+      /* Cobweb row spans full width */
       .tc-cobweb-row td {
         flex: 0 0 100% !important;
         padding: 10px 4px !important;
