@@ -309,62 +309,37 @@
     }
 
     @media (max-width: 600px) {
-      .tc-avatar { width: 28px; height: 28px; }
+      .tc-avatar { width: 26px; height: 26px; border-width: 1px; }
       .tc-manager { gap: 8px; }
-      .tc-cabinet { padding: 12px 8px 8px; }
+      .tc-cabinet { padding: 10px 6px 6px; }
 
-      /* Must reset the table/tbody display before flex can work on rows */
-      .tc-table,
-      .tc-table tbody { display: block; width: 100%; }
-      .tc-table thead { display: none; }
-
-      /* Single-line row: [avatar name · · · 🥇n 🥈n 🥉n total profit] */
-      .tc-table tbody tr {
-        display: flex;
-        flex-wrap: nowrap;
-        align-items: center;
-        width: 100%;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding: 9px 2px;
-        gap: 4px;
+      /* Stay a real table — just compact it so all columns fit the viewport */
+      .tc-table { table-layout: fixed; }
+      .tc-table thead th {
+        font-size: 0.55rem;
+        letter-spacing: 0.05em;
+        padding: 10px 4px;
       }
-      .tc-table tbody tr:last-child { border-bottom: none; }
       .tc-table tbody td {
-        display: block;
-        border-bottom: none !important;
-        padding: 0;
+        padding: 10px 4px;
+        font-size: 0.85rem;
       }
-      /* Manager takes all remaining space, truncate if needed */
-      .tc-table tbody td:first-child {
-        flex: 1 1 0;
-        min-width: 0;
-      }
-      .tc-table tbody td:first-child .tc-manager span {
+      .tc-table .tc-count { font-size: 0.85rem; }
+      .tc-table .tc-profit { font-size: 0.78rem; }
+
+      /* Manager flexes; medal/profit columns are narrow fixed widths */
+      .tc-table col.col-mgr    { width: auto; }
+      .tc-table col.col-medal  { width: 13%; }
+      .tc-table col.col-profit { width: 19%; }
+
+      /* Truncate long manager names instead of overflowing the row */
+      .tc-manager span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      /* Each count cell sizes to its content (medals + total) */
-      .tc-table tbody td.tc-count {
-        flex: 0 0 auto;
-        min-width: 24px;
-        text-align: center;
-        font-size: 0.8rem;
-        padding: 0;
-        white-space: nowrap;
-      }
-      /* Profit needs more room than the medal counts ("+$180", "-$120") */
-      .tc-table tbody td.tc-profit {
-        flex: 0 0 auto;
-        min-width: 0;
-        font-size: 0.72rem;
-        text-align: right;
-      }
-      /* Cobweb row spans full width */
-      .tc-cobweb-row td {
-        flex: 0 0 100% !important;
-        padding: 10px 4px !important;
-      }
+
+      .tc-cobweb-row td { padding: 10px 6px; }
     }
 
     /* ── SEASONS GRID ── */
@@ -800,6 +775,7 @@
       position: relative;
       box-shadow: 0 0 0 1px #3a1a08, 0 4px 16px rgba(0,0,0,0.5);
       transition: transform 0.15s, box-shadow 0.15s;
+      min-width: 0; /* let the grid track shrink instead of overflowing the row */
     }
     .preview-card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px #5c2d10, 0 8px 24px rgba(0,0,0,0.6); }
 
@@ -840,6 +816,7 @@
       font-style: italic;
       font-size: 0.72rem;
       color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     .assess-badge {
@@ -1262,7 +1239,6 @@
     };
 
     const haveRows = medalRows.map(r => {
-      const total = r.g + r.s + r.b;
       const p = profit(r);
       const profitClass = p > 0 ? 'profit-pos' : p < 0 ? 'profit-neg' : 'profit-zero';
       const av = avatarHtml({ avatar: r.avatar, teamName: r.manager }, 'tc-avatar');
@@ -1272,7 +1248,6 @@
           <td class="tc-count ${r.g ? '' : 'zero'}" data-label="Gold">${r.g ? '🥇 ' + r.g : '–'}</td>
           <td class="tc-count ${r.s ? '' : 'zero'}" data-label="Silver">${r.s ? '🥈 ' + r.s : '–'}</td>
           <td class="tc-count ${r.b ? '' : 'zero'}" data-label="Bronze">${r.b ? '🥉 ' + r.b : '–'}</td>
-          <td class="tc-count" data-label="Total">${total}</td>
           <td class="tc-count tc-profit ${profitClass}" data-label="Profit">${fmtProfit(p)}</td>
         </tr>`;
     });
@@ -1283,7 +1258,7 @@
       const names = zeroTrophy.map(m => `@${escHtml(m)}`).join(', ');
       cobwebRow = `
         <tr class="tc-cobweb-row">
-          <td colspan="6">
+          <td colspan="5">
             <div class="tc-cobweb-line">
               <span class="cobweb-icon">🕸️</span>
               <span class="cobweb-names">${names}</span>
@@ -1302,13 +1277,19 @@
       <div class="tc-cabinet">
         <div class="tc-interior">
           <table class="tc-table">
+            <colgroup>
+              <col class="col-mgr" />
+              <col class="col-medal" />
+              <col class="col-medal" />
+              <col class="col-medal" />
+              <col class="col-profit" />
+            </colgroup>
             <thead>
               <tr>
                 <th>Manager</th>
                 <th class="num">Gold</th>
                 <th class="num">Silver</th>
                 <th class="num">Bronze</th>
-                <th class="num">Total</th>
                 <th class="num">Profit</th>
               </tr>
             </thead>
