@@ -898,6 +898,81 @@
     .grade-d { color: #f0a060; }
     .grade-f { color: #f07a6a; }
 
+    /* Tap-to-expand roster */
+    .preview-card { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .preview-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .roster-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(92,45,16,0.5);
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .rt-chevron { transition: transform 0.2s; font-size: 0.7rem; line-height: 1; }
+    .preview-card.expanded .rt-chevron { transform: rotate(180deg); }
+    .preview-card.expanded .rt-label { color: var(--gold); }
+
+    .roster-panel {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(92,45,16,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .rp-group { display: block; }
+    .rp-pos {
+      font-family: var(--font-display);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .rp-pos-n {
+      color: var(--muted);
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 0 6px;
+      font-size: 0.55rem;
+    }
+    .rp-list { list-style: none; margin: 0; padding: 0; }
+    .rp-player {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .rp-player:last-child { border-bottom: none; }
+    .rp-name {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: #f0e8d8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .rp-meta {
+      font-family: var(--font-body);
+      font-size: 0.68rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .rp-empty { color: var(--muted); font-size: 0.78rem; font-style: italic; }
+
     @media (max-width: 600px) {
       .preview-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
       .preview-card { padding: 12px 12px 10px; }
@@ -1357,6 +1432,18 @@
       const starterAge = aws > 0 ? aw / aws : null;
 
       const h = history[mgr] || { titles: 0, podiums: 0 };
+
+      // Full live roster (every player Sleeper has rostered), named via playerMap,
+      // sorted by dynasty value. Used for the tap-to-expand roster panel.
+      const roster = (r.players || []).map(pid => ({
+        pid,
+        name: (playerMap[pid] && playerMap[pid].n) || null,
+        pos:  posMap[pid] || (playerMap[pid] && playerMap[pid].p) || '?',
+        nfl:  (playerMap[pid] && playerMap[pid].t) || '',
+        age:  ageMap[pid] || null,
+        dyn:  dynMap[pid] || 0,
+      })).sort((a, b) => b.dyn - a.dyn);
+
       return {
         rosterId: r.roster_id,
         manager: mgr,
@@ -1370,6 +1457,7 @@
         titles: h.titles,
         podiums: h.podiums,
         players,
+        roster,
       };
     });
 
@@ -1608,6 +1696,26 @@
 
     teams.forEach(t => { t.assessment = assess(t); t.tagline = makeTagline(t); });
 
+    // Roster panel revealed when a card is tapped — full live roster grouped by position.
+    const ROSTER_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
+    const rosterPanelHtml = t => {
+      const groups = {};
+      (t.roster || []).forEach(p => { (groups[p.pos] = groups[p.pos] || []).push(p); });
+      const order = [...ROSTER_ORDER, ...Object.keys(groups).filter(p => !ROSTER_ORDER.includes(p))];
+      const sections = order.filter(pos => groups[pos] && groups[pos].length).map(pos => {
+        const rows = groups[pos].map(p => `
+          <li class="rp-player">
+            <span class="rp-name">${escHtml(p.name || 'Unknown')}</span>
+            <span class="rp-meta">${escHtml(p.nfl || 'FA')}${p.age ? ' · ' + p.age : ''}</span>
+          </li>`).join('');
+        return `<div class="rp-group">
+          <div class="rp-pos">${escHtml(pos)} <span class="rp-pos-n">${groups[pos].length}</span></div>
+          <ul class="rp-list">${rows}</ul>
+        </div>`;
+      }).join('');
+      return `<div class="roster-panel" hidden>${sections || '<div class="rp-empty">Roster unavailable.</div>'}</div>`;
+    };
+
     const cards = teams.map((t, i) => {
       const rank = i + 1;
       const isTop = rank <= 3;
@@ -1623,7 +1731,7 @@
         </div>`;
       }).join('');
       return `
-        <div class="preview-card ${a.cls}">
+        <div class="preview-card ${a.cls}" role="button" tabindex="0" aria-expanded="false">
           <div class="preview-rank${isTop ? ' top' : ''}">#${rank}</div>
           <div class="preview-head">
             ${av}
@@ -1635,6 +1743,8 @@
           <div class="assess-badge ${a.cls}">${a.emoji} ${escHtml(a.label)}</div>
           <div class="assess-tagline">${escHtml(t.tagline)}</div>
           <div class="grade-grid">${gradeCells}</div>
+          <div class="roster-toggle"><span class="rt-label">Roster</span><span class="rt-chevron">▾</span></div>
+          ${rosterPanelHtml(t)}
         </div>`;
     }).join('');
 
@@ -1642,9 +1752,27 @@
     const year = currentLeague.season || '2026';
     el.innerHTML = `
       <div class="preview-title">🔭 ${year} Season Preview <span class="preview-live">Current Season</span></div>
-      <div class="preview-sub">${escHtml(currentLeague.name)} · Power ranked by roster strength · Powered by FantasyCalc</div>
+      <div class="preview-sub">${escHtml(currentLeague.name)} · Power ranked by roster strength · Tap a team for its roster · Powered by FantasyCalc</div>
       <div class="preview-grid">${cards}</div>`;
     el.style.display = 'block';
+
+    // Tap / keyboard to expand a card's roster
+    const grid = el.querySelector('.preview-grid');
+    const toggleCard = card => {
+      const open = card.classList.toggle('expanded');
+      card.setAttribute('aria-expanded', String(open));
+      const panel = card.querySelector('.roster-panel');
+      if (panel) panel.hidden = !open;
+    };
+    grid.addEventListener('click', e => {
+      const card = e.target.closest('.preview-card');
+      if (card) toggleCard(card);
+    });
+    grid.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('.preview-card');
+      if (card) { e.preventDefault(); toggleCard(card); }
+    });
   }
 
   async function main() {
