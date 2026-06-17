@@ -1012,18 +1012,18 @@
     .vc-axis-title { fill: var(--muted); font-family: var(--font-display); font-size: 12px; letter-spacing: 0.07em; }
     .vc-quad { fill: rgba(245,200,66,0.16); font-family: var(--font-display); font-size: 11px; letter-spacing: 0.12em; font-weight: 700; }
     .vc-rank { fill: #1e0d05; font-family: var(--font-display); font-size: 12px; font-weight: 700; }
-    .vc-label { fill: #d8c8a8; font-family: var(--font-body); font-size: 11px; }
+    .vc-label { fill: #e8dcc4; font-family: var(--font-body); font-size: 11px; }
+    .vc-leader { stroke: rgba(232,220,196,0.4); stroke-width: 1; }
 
     @media (max-width: 600px) {
       .preview-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
       .preview-card { padding: 12px 12px 10px; }
-      .value-chart { padding: 14px 10px 8px; }
-      /* The numbered dots map to the ranked cards below, so drop the crowded
-         side labels on small screens and enlarge the in-dot numbers + axes. */
-      .vc-label { display: none; }
+      .value-chart { padding: 14px 8px 8px; }
+      /* svg scales down on phones, so bump font sizes (in viewBox units) to stay legible */
       .vc-axis-title { font-size: 15px; }
       .vc-rank { font-size: 15px; }
       .vc-quad { font-size: 13px; }
+      .vc-label { font-size: 14px; }
     }
 
     /* ── FOOTER ── */
@@ -1833,16 +1833,31 @@
       const mx = sx(med(xs)), my = sy(med(ys));
       const dotFill = rank => rank <= 3 ? '#f5c842' : rank <= 6 ? '#c89b3c' : '#7d6a48';
 
-      const dots = teams.map((t, i) => {
-        const rank = i + 1;
+      // Each dot is labelled with its manager. Labels point inward (left half →
+      // label to the right, right half → to the left) and are de-collided
+      // vertically per side so they never stack; a leader line connects any
+      // label that had to be nudged off its dot.
+      const R = 10, GAP = R + 5, MINGAP = 15, midX = M.l + pw / 2;
+      const nodes = teams.map((t, i) => {
         const cx = sx(t.starterRd), cy = sy(t.potential);
-        const rightHalf = cx > M.l + pw * 0.6;
-        const lx = rightHalf ? cx - 13 : cx + 13;
-        const anchor = rightHalf ? 'end' : 'start';
+        return { rank: i + 1, cx, cy, side: cx > midX ? 'L' : 'R', label: '@' + t.manager, fill: dotFill(i + 1) };
+      });
+      ['L', 'R'].forEach(side => {
+        let prev = -Infinity;
+        nodes.filter(n => n.side === side).sort((a, b) => a.cy - b.cy)
+          .forEach(n => { n.ly = Math.max(n.cy, prev + MINGAP); prev = n.ly; });
+      });
+      const dots = nodes.map(n => {
+        const lx = n.side === 'L' ? n.cx - GAP : n.cx + GAP;
+        const anchor = n.side === 'L' ? 'end' : 'start';
+        const leader = Math.abs(n.ly - n.cy) > 1.5
+          ? `<line x1="${(n.side === 'L' ? n.cx - R : n.cx + R).toFixed(1)}" y1="${n.cy.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${n.ly.toFixed(1)}" class="vc-leader"/>`
+          : '';
         return `<g class="vc-dot">
-            <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="10" fill="${dotFill(rank)}" stroke="#1e0d05" stroke-width="1.5"/>
-            <text x="${cx.toFixed(1)}" y="${(cy + 3.3).toFixed(1)}" text-anchor="middle" class="vc-rank">${rank}</text>
-            <text x="${lx.toFixed(1)}" y="${(cy + 3.5).toFixed(1)}" text-anchor="${anchor}" class="vc-label">@${escHtml(t.manager)}</text>
+            ${leader}
+            <circle cx="${n.cx.toFixed(1)}" cy="${n.cy.toFixed(1)}" r="${R}" fill="${n.fill}" stroke="#1e0d05" stroke-width="1.5"/>
+            <text x="${n.cx.toFixed(1)}" y="${(n.cy + 3.3).toFixed(1)}" text-anchor="middle" class="vc-rank">${n.rank}</text>
+            <text x="${lx.toFixed(1)}" y="${(n.ly + 3.5).toFixed(1)}" text-anchor="${anchor}" class="vc-label">${escHtml(n.label)}</text>
           </g>`;
       }).join('');
 
