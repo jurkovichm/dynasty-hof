@@ -707,34 +707,38 @@
       .story-body { font-size: 0.88rem; }
       .season-card { padding: 20px 14px 28px; }
 
-      /* Podium: stack vertically 1st / 2nd / 3rd instead of side-by-side */
+      /* Podium: champion full-width on top, silver + bronze share the row below */
       .podium {
-        flex-direction: column;
+        flex-flow: row wrap;
         align-items: stretch;
-        gap: 16px;
+        gap: 12px;
         padding: 0;
       }
-      .podium-place {
-        max-width: 100%;
-        width: 100%;
-      }
-      /* Re-order so champion is on top */
-      .place-1 { order: 1; }
-      .place-2 { order: 2; }
-      .place-3 { order: 3; }
+      .podium-place { max-width: 100%; }
+      .place-1 { order: 1; flex: 0 0 100%; }
+      .place-2 { order: 2; flex: 1 1 0; min-width: 0; }
+      .place-3 { order: 3; flex: 1 1 0; min-width: 0; }
       /* Podium base bars look odd when stacked; hide them */
       .podium-bar { display: none; }
 
-      .place-card { padding: 18px 14px 16px; }
-      .team-name { font-size: 0.9rem; }
-      .medal { font-size: 2rem; }
-      .lombardi { height: 60px; }
-      .avatar { width: 56px; height: 56px; }
-      .place-1 .avatar { width: 64px; height: 64px; }
+      .place-card { padding: 16px 12px 14px; }
+      .team-name { font-size: 0.85rem; }
+      .place-label { margin-bottom: 8px; }
 
-      /* MVP row: allow text to wrap */
+      /* Gold: full width, but more compact than before */
+      .place-1 .place-card { padding: 14px 16px 14px; }
+      .place-1 .lombardi { height: 48px; }
+      .place-1 .avatar { width: 54px; height: 54px; }
+      .place-1 .team-name { font-size: 1rem; }
+
+      /* Silver & bronze: smaller so two fit side by side */
+      .place-2 .medal, .place-3 .medal { font-size: 1.7rem; margin-bottom: 4px; }
+      .place-2 .avatar, .place-3 .avatar { width: 44px; height: 44px; }
+
+      /* MVP row: allow text to wrap and shrink in the narrow columns */
       .mvp-row { flex-wrap: wrap; }
       .mvp-info { min-width: 0; flex: 1; }
+      .place-2 .mvp-avatar, .place-3 .mvp-avatar { width: 38px; height: 38px; }
     }
 
     /* ── SEASON PREVIEW ── */
@@ -901,7 +905,7 @@
     .grade-d { color: #f0a060; }
     .grade-f { color: #f07a6a; }
 
-    /* Tap-to-expand roster */
+    /* Tap to open roster overlay */
     .preview-card { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .preview-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
     .roster-toggle {
@@ -918,19 +922,70 @@
       text-transform: uppercase;
       color: var(--muted);
     }
+    .preview-card:hover .rt-label { color: var(--gold); }
     .rt-chevron { transition: transform 0.2s; font-size: 0.7rem; line-height: 1; }
-    .preview-card.expanded .rt-chevron { transform: rotate(180deg); }
-    .preview-card.expanded .rt-label { color: var(--gold); }
+    .preview-card:hover .rt-chevron { transform: translateX(2px); }
 
-    .roster-panel {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px dashed rgba(92,45,16,0.6);
-      display: none;
-      flex-direction: column;
-      gap: 10px;
+    /* ── ROSTER OVERLAY (modal) ── */
+    .roster-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
-    .preview-card.expanded .roster-panel { display: flex; }
+    .roster-overlay[hidden] { display: none; }
+    .ro-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      animation: ro-fade 0.18s ease;
+    }
+    .ro-dialog {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      max-height: 86vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background:
+        repeating-linear-gradient(91deg, transparent 0px, transparent 4px, rgba(92,45,16,0.06) 4px, rgba(92,45,16,0.06) 5px),
+        linear-gradient(160deg, #2a1208 0%, #190b03 100%);
+      border: 3px solid var(--wood-highlight);
+      border-radius: 6px;
+      box-shadow: 0 0 0 1px #3a1a08, 0 20px 60px rgba(0,0,0,0.75);
+      padding: 22px 22px 20px;
+      animation: ro-pop 0.18s ease;
+    }
+    @keyframes ro-fade { from { opacity: 0; } }
+    @keyframes ro-pop { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
+    .ro-close {
+      position: absolute;
+      top: 6px; right: 10px;
+      background: none; border: none;
+      color: var(--muted);
+      font-size: 1.7rem; line-height: 1;
+      cursor: pointer; padding: 4px 8px;
+      font-family: var(--font-body);
+    }
+    .ro-close:hover { color: var(--gold); }
+    .ro-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-right: 28px; }
+    .ro-avatar {
+      width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+      background: var(--surface2); border: 2px solid #5c2d10; flex-shrink: 0;
+    }
+    .ro-names { min-width: 0; }
+    .ro-team {
+      font-family: var(--font-display); font-weight: 700; font-size: 1.1rem;
+      color: #f8f0e0; overflow-wrap: anywhere; word-break: break-word;
+    }
+    .ro-mgr { font-family: var(--font-body); font-style: italic; font-size: 0.82rem; color: var(--muted); }
+    .ro-roster { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
     .rp-group { display: block; }
     .rp-pos {
       font-family: var(--font-display);
@@ -1797,9 +1852,9 @@
 
     teams.forEach(t => { t.assessment = assess(t); t.tagline = makeTagline(t); });
 
-    // Roster panel revealed when a card is tapped — full live roster grouped by position.
+    // Full live roster grouped by position — shown in the tap-to-open overlay.
     const ROSTER_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
-    const rosterPanelHtml = t => {
+    const rosterGroupsHtml = t => {
       const groups = {};
       (t.roster || []).forEach(p => { (groups[p.pos] = groups[p.pos] || []).push(p); });
       const order = [...ROSTER_ORDER, ...Object.keys(groups).filter(p => !ROSTER_ORDER.includes(p))];
@@ -1814,7 +1869,7 @@
           <ul class="rp-list">${rows}</ul>
         </div>`;
       }).join('');
-      return `<div class="roster-panel" hidden>${sections || '<div class="rp-empty">Roster unavailable.</div>'}</div>`;
+      return `<div class="ro-roster">${sections || '<div class="rp-empty">Roster unavailable.</div>'}</div>`;
     };
 
     // Scatter plot: X = current win-now strength, Y = long-term potential.
@@ -1896,7 +1951,7 @@
         </div>`;
       }).join('');
       return `
-        <div class="preview-card ${a.cls}" role="button" tabindex="0" aria-expanded="false">
+        <div class="preview-card ${a.cls}" role="button" tabindex="0" data-i="${i}" aria-haspopup="dialog">
           <div class="preview-rank${isTop ? ' top' : ''}">#${rank}</div>
           <div class="preview-head">
             ${av}
@@ -1908,8 +1963,7 @@
           <div class="assess-badge ${a.cls}">${a.emoji} ${escHtml(a.label)}</div>
           <div class="assess-tagline">${escHtml(t.tagline)}</div>
           <div class="grade-grid">${gradeCells}</div>
-          <div class="roster-toggle"><span class="rt-label">Roster</span><span class="rt-chevron">▾</span></div>
-          ${rosterPanelHtml(t)}
+          <div class="roster-toggle"><span class="rt-label">View Roster</span><span class="rt-chevron">→</span></div>
         </div>`;
     }).join('');
 
@@ -1922,22 +1976,62 @@
       <div class="preview-grid">${cards}</div>`;
     el.style.display = 'block';
 
-    // Tap / keyboard to expand a card's roster
+    // Tapping a card opens its roster in a modal overlay.
+    let overlay = document.getElementById('roster-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'roster-overlay';
+      overlay.className = 'roster-overlay';
+      overlay.hidden = true;
+      overlay.innerHTML =
+        '<div class="ro-backdrop" data-close></div>' +
+        '<div class="ro-dialog" role="dialog" aria-modal="true" aria-labelledby="ro-team">' +
+          '<button class="ro-close" data-close aria-label="Close roster">×</button>' +
+          '<div class="ro-content"></div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => { if (e.target.hasAttribute('data-close')) closeOverlay(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.hidden) closeOverlay(); });
+    }
+    const roContent = overlay.querySelector('.ro-content');
+    let lastFocused = null;
+    function closeOverlay() {
+      overlay.hidden = true;
+      document.body.style.overflow = '';
+      if (lastFocused) lastFocused.focus();
+    }
+    function openOverlay(t) {
+      const av = t.avatar
+        ? `<img class="ro-avatar" src="${escHtml(t.avatar)}" alt="" onerror="this.style.display='none'">`
+        : `<div class="ro-avatar avatar-fallback" style="display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:1.4rem;">${escHtml(t.manager[0].toUpperCase())}</div>`;
+      roContent.innerHTML = `
+        <div class="ro-header">
+          ${av}
+          <div class="ro-names">
+            <div class="ro-team" id="ro-team">${escHtml(t.teamName)}</div>
+            <div class="ro-mgr">@${escHtml(t.manager)} · #${t.dynRank} overall</div>
+          </div>
+        </div>
+        <div class="assess-badge ${t.assessment.cls}">${t.assessment.emoji} ${escHtml(t.assessment.label)}</div>
+        ${rosterGroupsHtml(t)}`;
+      lastFocused = document.activeElement;
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      overlay.scrollTop = 0;
+      overlay.querySelector('.ro-dialog').scrollTop = 0;
+      overlay.querySelector('.ro-close').focus();
+    }
+
     const grid = el.querySelector('.preview-grid');
-    const toggleCard = card => {
-      const open = card.classList.toggle('expanded');
-      card.setAttribute('aria-expanded', String(open));
-      const panel = card.querySelector('.roster-panel');
-      if (panel) panel.hidden = !open;
-    };
+    const openFromCard = card => { const t = teams[+card.dataset.i]; if (t) openOverlay(t); };
     grid.addEventListener('click', e => {
       const card = e.target.closest('.preview-card');
-      if (card) toggleCard(card);
+      if (card) openFromCard(card);
     });
     grid.addEventListener('keydown', e => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const card = e.target.closest('.preview-card');
-      if (card) { e.preventDefault(); toggleCard(card); }
+      if (card) { e.preventDefault(); openFromCard(card); }
     });
   }
 
