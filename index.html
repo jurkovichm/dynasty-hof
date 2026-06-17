@@ -571,6 +571,8 @@
       margin-bottom: 6px;
       color: #f8f0e0;
       text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .place-1 .team-name { font-size: 1.1rem; }
 
@@ -579,6 +581,8 @@
       font-style: italic;
       font-size: 0.82rem;
       color: var(--muted);
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     /* Podium base bars — carved wood steps */
@@ -714,10 +718,13 @@
         gap: 12px;
         padding: 0;
       }
-      .podium-place { max-width: 100%; }
+      .podium-place { max-width: 100%; min-width: 0; }
       .place-1 { order: 1; flex: 0 0 100%; }
       .place-2 { order: 2; flex: 1 1 0; min-width: 0; }
       .place-3 { order: 3; flex: 1 1 0; min-width: 0; }
+      /* Make the visible card fill its (equal-height) place so silver & bronze
+         bottoms line up, not just the invisible place wrappers */
+      .place-2 .place-card, .place-3 .place-card { flex: 1 1 auto; min-width: 0; }
       /* Podium base bars look odd when stacked; hide them */
       .podium-bar { display: none; }
 
