@@ -332,8 +332,8 @@
       .tc-table col.col-medal  { width: 13%; }
       .tc-table col.col-profit { width: 19%; }
 
-      /* Wrap long manager names instead of overflowing or truncating */
-      .tc-manager { flex-wrap: wrap; }
+      /* Long manager names wrap beside the avatar (not below it) — no ellipsis */
+      .tc-manager { align-items: center; }
       .tc-manager span {
         min-width: 0;
         overflow-wrap: anywhere;
@@ -781,6 +781,9 @@
       box-shadow: 0 0 0 1px #3a1a08, 0 4px 16px rgba(0,0,0,0.5);
       transition: transform 0.15s, box-shadow 0.15s;
       min-width: 0; /* let the grid track shrink instead of overflowing the row */
+      /* Flex column so grade grid + toggle pin to the bottom and align across a row */
+      display: flex;
+      flex-direction: column;
     }
     .preview-card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px #5c2d10, 0 8px 24px rgba(0,0,0,0.6); }
 
@@ -800,6 +803,7 @@
       align-items: center;
       gap: 10px;
       margin-bottom: 10px;
+      padding-right: 26px; /* reserve room for the absolute rank badge */
     }
     .preview-avatar {
       width: 42px; height: 42px;
@@ -822,12 +826,12 @@
       font-style: italic;
       font-size: 0.72rem;
       color: var(--muted);
-      overflow-wrap: anywhere;
-      word-break: break-word;
+      overflow-wrap: break-word; /* only break the handle if it truly can't fit */
     }
 
     .assess-badge {
       display: inline-block;
+      align-self: flex-start; /* don't stretch full-width inside the flex-column card */
       font-family: var(--font-display);
       font-size: 0.74rem;
       font-weight: 700;
@@ -855,6 +859,7 @@
       margin-bottom: 12px;
       padding-bottom: 10px;
       border-bottom: 1px solid rgba(92,45,16,0.5);
+      flex: 1 1 auto; /* fill remaining height so grades + toggle align across a row */
     }
 
     .preview-live {
@@ -1073,6 +1078,9 @@
     @media (max-width: 600px) {
       .preview-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
       .preview-card { padding: 12px 12px 10px; }
+      /* narrow 2-up cards: smaller avatar + less rank reservation so names get room */
+      .preview-head { gap: 8px; padding-right: 16px; }
+      .preview-avatar { width: 34px; height: 34px; }
       .value-chart { padding: 14px 8px 8px; }
       /* svg scales down on phones, so bump font sizes (in viewBox units) to stay legible */
       .vc-axis-title { font-size: 15px; }
