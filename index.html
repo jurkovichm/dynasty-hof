@@ -1867,6 +1867,11 @@
 
     teams.forEach(t => { t.assessment = assess(t); t.tagline = makeTagline(t); });
 
+    // Arrange the cards (and the chart's numbering) by current win-now strength —
+    // i.e. the redraft value of each team's starters. Archetypes/tiers above stay
+    // based on dynasty value; only the display order + rank number change.
+    teams.sort((a, b) => b.starterRd - a.starterRd);
+
     // Full live roster grouped by position — shown in the tap-to-open overlay.
     const ROSTER_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
     const rosterGroupsHtml = t => {
@@ -1986,7 +1991,7 @@
     const year = currentLeague.season || '2026';
     el.innerHTML = `
       <div class="preview-title">🔭 ${year} Season Preview <span class="preview-live">Current Season</span></div>
-      <div class="preview-sub">${escHtml(currentLeague.name)} · Power ranked by roster strength · Tap a team for its roster · Powered by FantasyCalc</div>
+      <div class="preview-sub">${escHtml(currentLeague.name)} · Ranked by current starter value (redraft) · Tap a team for its roster · Powered by FantasyCalc</div>
       ${renderValueChart(teams)}
       <div class="preview-grid">${cards}</div>`;
     el.style.display = 'block';
