@@ -978,9 +978,52 @@
     }
     .rp-empty { color: var(--muted); font-size: 0.78rem; font-style: italic; }
 
+    /* ── VALUE SCATTER PLOT ── */
+    .value-chart {
+      background:
+        repeating-linear-gradient(91deg, transparent 0px, transparent 4px, rgba(92,45,16,0.06) 4px, rgba(92,45,16,0.06) 5px),
+        linear-gradient(160deg, #2a1208 0%, #1e0d05 100%);
+      border: 2px solid var(--wood-highlight);
+      border-radius: 4px;
+      padding: 18px 18px 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 0 0 1px #3a1a08, 0 4px 16px rgba(0,0,0,0.5);
+    }
+    .vc-head {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-align: center;
+      letter-spacing: 0.04em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .vc-sub {
+      text-align: center;
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+    .vc-svg { width: 100%; height: auto; display: block; overflow: visible; }
+    .vc-axis { stroke: #5c2d10; stroke-width: 1.5; }
+    .vc-gridline { stroke: rgba(245,200,66,0.14); stroke-width: 1; stroke-dasharray: 4 4; }
+    .vc-axis-title { fill: var(--muted); font-family: var(--font-display); font-size: 12px; letter-spacing: 0.07em; }
+    .vc-quad { fill: rgba(245,200,66,0.16); font-family: var(--font-display); font-size: 11px; letter-spacing: 0.12em; font-weight: 700; }
+    .vc-rank { fill: #1e0d05; font-family: var(--font-display); font-size: 12px; font-weight: 700; }
+    .vc-label { fill: #d8c8a8; font-family: var(--font-body); font-size: 11px; }
+
     @media (max-width: 600px) {
       .preview-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
       .preview-card { padding: 12px 12px 10px; }
+      .value-chart { padding: 14px 10px 8px; }
+      /* The numbered dots map to the ranked cards below, so drop the crowded
+         side labels on small screens and enlarge the in-dot numbers + axes. */
+      .vc-label { display: none; }
+      .vc-axis-title { font-size: 15px; }
+      .vc-rank { font-size: 15px; }
+      .vc-quad { font-size: 13px; }
     }
 
     /* ── FOOTER ── */
@@ -1382,11 +1425,12 @@
 
   async function renderSeasonPreview(currentLeague, lastPodium, history = {}) {
     const FC_URL = 'https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=2&numTeams=10&ppr=0.5';
-    const [fcData, rosters, users, playerMap] = await Promise.all([
+    const [fcData, rosters, users, playerMap, tradedPicks] = await Promise.all([
       fetchJSON(FC_URL),
       fetchJSON(`${API}/league/${currentLeague.league_id}/rosters`),
       fetchJSON(`${API}/league/${currentLeague.league_id}/users`),
       fetchJSON('rostered-players.json'),
+      fetchJSON(`${API}/league/${currentLeague.league_id}/traded_picks`).catch(() => []),
     ]);
 
     // Build dynasty value, redraft value, age, and position maps keyed by sleeperId
@@ -1400,6 +1444,49 @@
         if (p.player.position) posMap[sid] = p.player.position;
       }
     });
+
+    // ── Draft-pick dynasty values ──────────────────────────────────────────
+    // FantasyCalc prices picks as entries with no sleeperId and a name like
+    // "2026 Mid 1st" / "2026 1st". Parse year+round and average Early/Mid/Late.
+    const pickAgg = {}; // `${year}-${round}` -> { sum, n }
+    fcData.forEach(p => {
+      const pl = p.player || {};
+      if (pl.sleeperId) return;
+      const name = pl.name || '';
+      const ym = name.match(/(20\d{2})/);
+      const rm = name.match(/(\d+)\s*(?:st|nd|rd|th)\b/i) || name.match(/round\s*(\d+)/i);
+      if (!ym || !rm) return;
+      const key = `${ym[1]}-${rm[1]}`;
+      (pickAgg[key] = pickAgg[key] || { sum: 0, n: 0 });
+      pickAgg[key].sum += (p.value || 0);
+      pickAgg[key].n++;
+    });
+    const pickVal = (year, round) => {
+      const v = pickAgg[`${year}-${round}`];
+      return v && v.n ? v.sum / v.n : 0;
+    };
+
+    // Reconstruct each roster's owned picks: every team owns its own picks for
+    // each priced future season/round by default, then traded_picks reassigns.
+    const curYear = parseInt(currentLeague.season, 10) || new Date().getFullYear();
+    const pickSeasons = [...new Set(Object.keys(pickAgg).map(k => +k.split('-')[0]))].filter(y => y >= curYear);
+    const pickRounds  = [...new Set(Object.keys(pickAgg).map(k => +k.split('-')[1]))];
+    const picksByRoster = {};
+    rosters.forEach(r => { picksByRoster[r.roster_id] = []; });
+    pickSeasons.forEach(season => pickRounds.forEach(round => {
+      rosters.forEach(r => picksByRoster[r.roster_id].push({ season, round, origin: r.roster_id }));
+    }));
+    (tradedPicks || []).forEach(tp => {
+      const season = +tp.season, round = +tp.round, origin = +tp.roster_id, owner = +tp.owner_id;
+      if (!pickSeasons.includes(season) || !pickRounds.includes(round)) return;
+      Object.values(picksByRoster).forEach(list => {
+        const i = list.findIndex(p => p.season === season && p.round === round && p.origin === origin);
+        if (i >= 0) list.splice(i, 1);
+      });
+      if (picksByRoster[owner]) picksByRoster[owner].push({ season, round, origin });
+    });
+    const picksDynOf = rosterId =>
+      (picksByRoster[rosterId] || []).reduce((s, p) => s + pickVal(p.season, p.round), 0);
 
     const userById = {};
     users.forEach(u => { userById[u.user_id] = u; });
@@ -1431,6 +1518,12 @@
       const starterDyn = starters.reduce((s, p) => s + p.dyn, 0);
       const benchDyn   = bench.reduce((s, p) => s + p.dyn, 0);
 
+      // Current win-now strength: redraft value of the best startable lineup
+      const starterRd = [...players].sort((a, b) => b.rd - a.rd)
+        .slice(0, STARTER_SLOTS).reduce((s, p) => s + p.rd, 0);
+      // Long-term potential: full roster dynasty value + owned draft picks
+      const picksDyn = picksDynOf(r.roster_id);
+
       // Age weighted by value over STARTERS only — the starters' age is what drives the window
       let aw = 0, aws = 0;
       starters.forEach(p => { if (p.age) { aw += p.age * p.dyn; aws += p.dyn; } });
@@ -1457,6 +1550,9 @@
         totalDyn,
         totalRd,
         starterAge,
+        starterRd,
+        picksDyn,
+        potential: totalDyn + picksDyn,
         // bench value relative to starters: low = top-heavy, high = deep
         depthRatio: starterDyn > 0 ? benchDyn / starterDyn : 0,
         titles: h.titles,
@@ -1721,6 +1817,55 @@
       return `<div class="roster-panel" hidden>${sections || '<div class="rp-empty">Roster unavailable.</div>'}</div>`;
     };
 
+    // Scatter plot: X = current win-now strength, Y = long-term potential.
+    const renderValueChart = teams => {
+      if (!teams.length) return '';
+      const W = 640, H = 440, M = { t: 26, r: 22, b: 60, l: 64 };
+      const pw = W - M.l - M.r, ph = H - M.t - M.b;
+      const xs = teams.map(t => t.starterRd), ys = teams.map(t => t.potential);
+      const xMin = Math.min(...xs), xMax = Math.max(...xs);
+      const yMin = Math.min(...ys), yMax = Math.max(...ys);
+      const padX = (xMax - xMin) * 0.16 || 1, padY = (yMax - yMin) * 0.16 || 1;
+      const x0 = xMin - padX, x1 = xMax + padX, y0 = yMin - padY, y1 = yMax + padY;
+      const sx = v => M.l + (v - x0) / (x1 - x0) * pw;
+      const sy = v => M.t + ph - (v - y0) / (y1 - y0) * ph;
+      const med = arr => { const s = [...arr].sort((a, b) => a - b), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+      const mx = sx(med(xs)), my = sy(med(ys));
+      const dotFill = rank => rank <= 3 ? '#f5c842' : rank <= 6 ? '#c89b3c' : '#7d6a48';
+
+      const dots = teams.map((t, i) => {
+        const rank = i + 1;
+        const cx = sx(t.starterRd), cy = sy(t.potential);
+        const rightHalf = cx > M.l + pw * 0.6;
+        const lx = rightHalf ? cx - 13 : cx + 13;
+        const anchor = rightHalf ? 'end' : 'start';
+        return `<g class="vc-dot">
+            <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="10" fill="${dotFill(rank)}" stroke="#1e0d05" stroke-width="1.5"/>
+            <text x="${cx.toFixed(1)}" y="${(cy + 3.3).toFixed(1)}" text-anchor="middle" class="vc-rank">${rank}</text>
+            <text x="${lx.toFixed(1)}" y="${(cy + 3.5).toFixed(1)}" text-anchor="${anchor}" class="vc-label">@${escHtml(t.manager)}</text>
+          </g>`;
+      }).join('');
+
+      return `
+        <div class="value-chart">
+          <div class="vc-head">🗺️ The League Landscape</div>
+          <div class="vc-sub">Win-now strength vs. long-term potential — each team plotted</div>
+          <svg viewBox="0 0 ${W} ${H}" class="vc-svg" role="img" aria-label="Scatter plot of teams: current roster strength versus future potential">
+            <line x1="${mx.toFixed(1)}" y1="${M.t}" x2="${mx.toFixed(1)}" y2="${M.t + ph}" class="vc-gridline"/>
+            <line x1="${M.l}" y1="${my.toFixed(1)}" x2="${M.l + pw}" y2="${my.toFixed(1)}" class="vc-gridline"/>
+            <text x="${(M.l + pw - 6).toFixed(1)}" y="${(M.t + 13).toFixed(1)}" text-anchor="end" class="vc-quad">JUGGERNAUTS</text>
+            <text x="${(M.l + 6).toFixed(1)}" y="${(M.t + 13).toFixed(1)}" text-anchor="start" class="vc-quad">REBUILDING</text>
+            <text x="${(M.l + pw - 6).toFixed(1)}" y="${(M.t + ph - 8).toFixed(1)}" text-anchor="end" class="vc-quad">WIN-NOW</text>
+            <text x="${(M.l + 6).toFixed(1)}" y="${(M.t + ph - 8).toFixed(1)}" text-anchor="start" class="vc-quad">RETOOLING</text>
+            <line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t + ph}" class="vc-axis"/>
+            <line x1="${M.l}" y1="${M.t + ph}" x2="${M.l + pw}" y2="${M.t + ph}" class="vc-axis"/>
+            <text x="${(M.l + pw / 2).toFixed(1)}" y="${H - 14}" text-anchor="middle" class="vc-axis-title">CURRENT ROSTER · Starters Redraft Value →</text>
+            <text x="${(-(M.t + ph / 2)).toFixed(1)}" y="15" text-anchor="middle" transform="rotate(-90)" class="vc-axis-title">POTENTIAL · Roster + Picks Dynasty Value →</text>
+            ${dots}
+          </svg>
+        </div>`;
+    };
+
     const cards = teams.map((t, i) => {
       const rank = i + 1;
       const isTop = rank <= 3;
@@ -1758,6 +1903,7 @@
     el.innerHTML = `
       <div class="preview-title">🔭 ${year} Season Preview <span class="preview-live">Current Season</span></div>
       <div class="preview-sub">${escHtml(currentLeague.name)} · Power ranked by roster strength · Tap a team for its roster · Powered by FantasyCalc</div>
+      ${renderValueChart(teams)}
       <div class="preview-grid">${cards}</div>`;
     el.style.display = 'block';
 
