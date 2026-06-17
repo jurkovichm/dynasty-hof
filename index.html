@@ -1459,50 +1459,151 @@
       return { label: 'Rebuilding', emoji: '🔄', cls: 'arch-rebuild' };
     };
 
-    // Cohesive, team-specific blurb woven from window, position grades, depth, and pedigree.
+    // Analyst-style blurb woven from window, position grades, depth, and pedigree.
+    // Reads like an ESPN/Rotoworld preview: a headline verdict, a scouting note,
+    // then a forward-looking kicker. Picks are seeded per team so the prose is
+    // stable across reloads but varies roster to roster.
     const GVAL = { 'A+':12,'A':11,'A-':10,'B+':9,'B':8,'B-':7,'C+':6,'C':5,'C-':4,'D':2,'F':0 };
+
+    const seedOf = t => {
+      const s = String(t.rosterId) + '|' + t.manager;
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    };
+    // Position nouns (varied), strength/weakness adjectives. STRONG entries are
+    // pure adjectives ("an ELITE backfield"); WEAK entries follow "is ..." so
+    // both adjectives and noun phrases read correctly.
+    const POS_NOUN = {
+      QB: ['quarterback room', 'QB room', 'passing attack', 'signal-caller spot'],
+      RB: ['backfield', 'running back room', 'ground game', 'stable of backs'],
+      WR: ['receiving corps', 'wide receiver room', 'group of pass-catchers', 'WR room'],
+      TE: ['tight end spot', 'TE room', 'tight end position'],
+    };
+    const STRONG = v => v >= 11 ? ['elite', 'league-best', 'loaded', 'high-end']
+                      : v >= 10 ? ['high-end', 'star-studded', 'well-stocked', 'formidable']
+                      : ['solid', 'dependable', 'steady', 'rock-solid'];
+    const WEAK = v => v <= 2 ? ['barren', 'a glaring hole', 'a major liability']
+                    : v <= 4 ? ['a real question mark', 'thin', 'a soft spot']
+                    : ['underwhelming', 'unspectacular', 'nothing special'];
+    const anA = w => /^[aeiou]/i.test(w) ? 'an' : 'a';
+    const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
     const makeTagline = t => {
+      const seed = seedOf(t);
+      const pick = (arr, salt) => arr[(seed + salt) % arr.length];
+
       const entries = POSITIONS.map(p => ({ p, v: GVAL[t.grades[p]] ?? 5 }));
       const best  = entries.reduce((a, b) => b.v > a.v ? b : a);
       const worst = entries.reduce((a, b) => b.v < a.v ? b : a);
       const dir = t.windowDir, tier = t.tier;
       const ring = t.titles >= 1, proven = t.podiums >= 2;
+      const wasChamp = t.manager === lastChamp;
 
-      // Situational lead (no claims that the position callout might contradict)
-      let lead;
+      const bestNoun  = pick(POS_NOUN[best.p], 1);
+      const worstNoun = pick(POS_NOUN[worst.p], 2);
+      const sw = pick(STRONG(best.v), 3);
+      const ww = pick(WEAK(worst.v), 4);
+      const hasStrong = best.v >= 8;
+      const hasWeak   = worst.v <= 5;
+
+      // 1) Lead — the headline verdict
+      let leadPool;
       if (tier === 'top') {
-        lead = t.manager === lastChamp ? 'The defending champ reloads'
-             : dir === 'close' ? (ring ? 'A proven roster running low on runway' : 'A win-now veteran group')
-             : dir === 'open'  ? 'A rising young powerhouse'
-             : proven ? 'A perennial title threat' : 'A genuine title threat';
+        leadPool = wasChamp
+            ? ['The defending champ runs it back as the clear team to beat.',
+               'Back to defend the crown — still the measuring stick of the league.',
+               'The reigning champ reloads and once again looks like the favorite.']
+          : dir === 'close'
+            ? (ring ? ['A proven title core, but the runway is getting short.',
+                       'A battle-tested roster squarely in win-now mode.']
+                    : ['All-in on a win-now push before the window slams shut.',
+                       'A veteran-laden heavyweight racing against the clock.'])
+          : dir === 'open'
+            ? (ring ? ['A young powerhouse that already owns hardware — terrifying.',
+                       'The rare team that is both loaded and still ascending.']
+                    : ['A rising juggernaut with the rest of the league on notice.',
+                       'The arrow points straight up on this loaded young roster.'])
+          : t.dynRank === 1
+            ? ['On paper, the most complete roster in the league.',
+               'The clear-cut No. 1 on talent alone.']
+          : proven
+            ? ['A perennial contender that belongs in every title conversation.',
+               'A familiar face near the top, and a threat once again.']
+            : ['A bona fide contender with a legitimate path to the crown.',
+               'Quietly one of the strongest rosters in the league.'];
       } else if (tier === 'mid') {
-        lead = dir === 'close' ? 'An aging mid-pack squad'
-             : dir === 'open'  ? 'A youthful team trending up'
-             : 'A fringe playoff hopeful';
+        leadPool = dir === 'close'
+            ? ['An aging middle-of-the-pack group with one last push left in it.',
+               'Squarely on the bubble, and the clock is ticking.']
+          : dir === 'open'
+            ? ['A trendy dark-horse pick with real breakout upside.',
+               'A young, ascending squad nobody wants to draw early.']
+            : ['A classic fringe playoff team, stuck in the muddled middle.',
+               'Right on the playoff bubble, with little margin for error.'];
       } else {
-        lead = dir === 'close' ? (ring ? 'A faded former contender' : 'An old roster due for a reset')
-             : dir === 'open'  ? 'A youth-loaded rebuild'
-             : 'A rebuild still taking shape';
+        leadPool = dir === 'close'
+            ? (ring ? ['A former contender that has clearly seen better days.',
+                       'The dynasty has faded; a reset feels overdue.']
+                    : ['An aging roster staring down a teardown.',
+                       'Time to sell — this group has run its course.'])
+          : dir === 'open'
+            ? ['A youth-loaded rebuild with a genuinely bright long-term outlook.',
+               'Building for tomorrow, not today, around promising young pieces.']
+          : t.dynRank >= 10
+            ? ['A bottom-of-the-barrel roster with a long road ahead.',
+               'Rock bottom on talent — but every rebuild starts somewhere.']
+            : ['A rebuild still very much taking shape.',
+               'Squarely in retool mode, with plenty of work to do.'];
+      }
+      const lead = pick(leadPool, 5);
+
+      // 2) Core — position-specific scouting note
+      let core;
+      if (hasStrong && hasWeak) {
+        core = pick([
+          `${cap(anA(sw))} ${sw} ${bestNoun} is the calling card, but the ${worstNoun} is ${ww}.`,
+          `They’re built around ${anA(sw)} ${sw} ${bestNoun}, though the ${worstNoun} is ${ww}.`,
+          `For all the firepower of ${anA(sw)} ${sw} ${bestNoun}, the ${worstNoun} is ${ww}.`,
+        ], 6);
+      } else if (hasStrong) {
+        core = pick([
+          `${cap(anA(sw))} ${sw} ${bestNoun} headlines a roster with no glaring holes.`,
+          `The roster is anchored by ${anA(sw)} ${sw} ${bestNoun}, and it’s well-rounded elsewhere.`,
+        ], 6);
+      } else if (hasWeak) {
+        core = pick([
+          `There’s little to lean on here, and the ${worstNoun} is ${ww}.`,
+          `The roster lacks a true difference-maker, and the ${worstNoun} is ${ww}.`,
+        ], 6);
+      } else {
+        core = pick([
+          `It’s a roster of middling, interchangeable parts — fine everywhere, special nowhere.`,
+          `Nothing jumps off the page; it’s a solidly average group across the board.`,
+        ], 6);
       }
 
-      // Position-specific body (varies team to team)
-      const strong = best.v >= 11 ? `elite at ${best.p}`
-                   : best.v >= 9  ? `strong at ${best.p}`
-                   : best.v >= 7  ? `steady at ${best.p}` : null;
-      const weak = worst.v <= 2 ? `a gaping hole at ${worst.p}`
-                 : worst.v <= 5 ? `a soft spot at ${worst.p}` : null;
-      let body;
-      if (strong && weak)      body = `${strong}, but ${weak}`;
-      else if (strong)         body = strong;
-      else if (weak)           body = `little to lean on and ${weak}`;
-      else                     body = 'a roster of middling, interchangeable parts';
-
-      // Depth tail only when notable, so it isn't repeated everywhere
+      // 3) Depth note (when notable) + a forward-looking kicker
       const depth = depthOf(t);
-      const tail = depth === 'deep' ? ' Real depth behind the starters.'
-                 : depth === 'topheavy' ? ' Dangerously thin past the top.' : '';
+      const depthNote = depth === 'deep'
+          ? pick([' Real depth behind the starters gives them staying power.',
+                  ' The bench is stocked enough to weather an injury or two.'], 7)
+        : depth === 'topheavy'
+          ? pick([' It’s dangerously top-heavy, though — one injury could unravel it.',
+                  ' Depth is a genuine worry once you get past the starters.'], 7)
+          : '';
+      const closePool = tier === 'top'
+          ? ['Title-or-bust.', 'Expect them deep in the bracket come playoff time.',
+             'Anything short of a long postseason run would be a disappointment.']
+        : tier === 'mid'
+          ? ['The kind of team that sneaks into the bracket and gets hot.',
+             'Sneaky-good, and easy to overlook at your own peril.',
+             'A live underdog if the breaks fall their way.']
+          : ['One to monitor down the road.', 'Check back in a year or two.',
+             'Patience will be required.'];
+      const closing = pick(closePool, 8);
 
-      return `${lead} — ${body}.${tail}`;
+      return `${lead} ${core}${depthNote} ${closing}`;
     };
 
     teams.forEach(t => { t.assessment = assess(t); t.tagline = makeTagline(t); });
