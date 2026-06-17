@@ -34,6 +34,9 @@
 
     body {
       background-color: var(--bg);
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
       background-image:
         repeating-linear-gradient(
           92deg,
@@ -308,22 +311,22 @@
     @media (max-width: 600px) {
       .tc-avatar { width: 28px; height: 28px; }
       .tc-manager { gap: 8px; }
-      .tc-cabinet { padding: 12px 12px 8px; }
+      .tc-cabinet { padding: 12px 8px 8px; }
 
       /* Must reset the table/tbody display before flex can work on rows */
       .tc-table,
       .tc-table tbody { display: block; width: 100%; }
       .tc-table thead { display: none; }
 
-      /* Single-line row: [avatar name · · · 🥇n 🥈n 🥉n total] */
+      /* Single-line row: [avatar name · · · 🥇n 🥈n 🥉n total profit] */
       .tc-table tbody tr {
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
         width: 100%;
         border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding: 9px 4px;
-        gap: 6px;
+        padding: 9px 2px;
+        gap: 4px;
       }
       .tc-table tbody tr:last-child { border-bottom: none; }
       .tc-table tbody td {
@@ -341,13 +344,21 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      /* Each medal count: narrow fixed width */
+      /* Each count cell sizes to its content (medals + total) */
       .tc-table tbody td.tc-count {
-        flex: 0 0 28px;
+        flex: 0 0 auto;
+        min-width: 24px;
         text-align: center;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
         padding: 0;
         white-space: nowrap;
+      }
+      /* Profit needs more room than the medal counts ("+$180", "-$120") */
+      .tc-table tbody td.tc-profit {
+        flex: 0 0 auto;
+        min-width: 0;
+        font-size: 0.72rem;
+        text-align: right;
       }
       /* Cobweb row spans full width */
       .tc-cobweb-row td {
@@ -695,6 +706,15 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
+      /* Trim oversized desktop spacing so mobile isn't all scrolling */
+      .hero { padding: 36px 16px 30px; }
+      .trophy-icon { font-size: 52px; }
+      #season-preview { padding: 40px 12px 0; }
+      #trophy-case { padding: 40px 12px 0; }
+      #past-seasons { padding-top: 40px; }
+      #seasons { padding: 24px 12px 40px; }
+      .season-card { margin-bottom: 32px; }
+
       /* Nav: wrap on small screens */
       .topnav { flex-wrap: wrap; gap: 4px; margin-top: 20px; }
       .navlink {
