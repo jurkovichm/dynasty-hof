@@ -1046,6 +1046,41 @@
     }
     .ro-mgr { font-family: var(--font-body); font-style: italic; font-size: 0.82rem; color: var(--muted); }
     .ro-roster { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+
+    /* Manager profile modal */
+    .tc-row { cursor: pointer; }
+    .cobweb-name { cursor: pointer; border-bottom: 1px dotted rgba(154,128,96,0.5); }
+    .cobweb-name:hover { color: var(--gold); }
+    .pf-medals {
+      display: flex; gap: 16px; justify-content: center;
+      margin: 14px 0 4px;
+      font-family: var(--font-display); font-weight: 700; font-size: 1.05rem;
+      color: var(--text);
+    }
+    .pf-medals .pf-zero { opacity: 0.35; }
+    .pf-seasons { margin-top: 12px; display: flex; flex-direction: column; }
+    .pf-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 2px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .pf-row:last-child { border-bottom: none; }
+    .pf-year { font-family: var(--font-display); font-weight: 700; color: var(--gold); width: 3.2em; flex-shrink: 0; }
+    .pf-finish {
+      font-family: var(--font-display); font-size: 0.66rem; letter-spacing: 0.06em;
+      text-transform: uppercase; font-weight: 700;
+      padding: 3px 9px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+    }
+    .pf-gold   { color: var(--gold);   background: rgba(245,200,66,0.14); border: 1px solid rgba(245,200,66,0.4); }
+    .pf-silver { color: var(--silver); background: rgba(192,192,192,0.12); border: 1px solid rgba(192,192,192,0.35); }
+    .pf-bronze { color: #d08a44;       background: rgba(205,127,50,0.14); border: 1px solid rgba(205,127,50,0.4); }
+    .pf-out    { color: var(--muted);  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+    .pf-dnp    { color: var(--muted);  background: transparent; border: 1px dashed rgba(255,255,255,0.12); opacity: 0.75; }
+    .pf-team {
+      font-family: var(--font-body); font-size: 0.8rem; color: #d8c8a8;
+      margin-left: auto; text-align: right; min-width: 0;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
     .rp-group { display: block; }
     .rp-pos {
       font-family: var(--font-display);
@@ -1650,7 +1685,7 @@
       const profitClass = p > 0 ? 'profit-pos' : p < 0 ? 'profit-neg' : 'profit-zero';
       const av = avatarHtml({ avatar: r.avatar, teamName: r.manager }, 'tc-avatar');
       return `
-        <tr>
+        <tr class="tc-row" data-mgr="${escHtml(r.manager)}" role="button" tabindex="0">
           <td><div class="tc-manager">${av}<span>@${escHtml(r.manager)}</span></div></td>
           <td class="tc-count ${r.g ? '' : 'zero'}" data-label="Gold">${r.g ? '🥇 <span class="cup" data-to="' + r.g + '">' + r.g + '</span>' : '–'}</td>
           <td class="tc-count ${r.s ? '' : 'zero'}" data-label="Silver">${r.s ? '🥈 <span class="cup" data-to="' + r.s + '">' + r.s + '</span>' : '–'}</td>
@@ -1662,7 +1697,7 @@
     const zeroTrophy = noMedalRows.map(r => r.manager);
     let cobwebRow = '';
     if (zeroTrophy.length) {
-      const names = zeroTrophy.map(m => `@${escHtml(m)}`).join(', ');
+      const names = zeroTrophy.map(m => `<span class="cobweb-name" data-mgr="${escHtml(m)}" role="button" tabindex="0">@${escHtml(m)}</span>`).join(', ');
       cobwebRow = `
         <tr class="tc-cobweb-row">
           <td colspan="5">
@@ -1769,6 +1804,92 @@
       t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); applySort(t.dataset.key); } });
       t.tabIndex = 0;
       t.setAttribute('role', 'button');
+    });
+
+    // ── Manager profile modal: click a row (or a cobweb name) for season-by-season history ──
+    const PLACE_META = [
+      { medal: '🥇', label: 'Champion',    cls: 'pf-gold' },
+      { medal: '🥈', label: 'Runner-Up',   cls: 'pf-silver' },
+      { medal: '🥉', label: 'Third Place', cls: 'pf-bronze' },
+    ];
+    // Per-season lookup of each manager's finish + team name (newest first)
+    const seasonInfo = completedSeasons.map(({ league, podium }) => {
+      const placeByMgr = {}, teamByMgr = {};
+      (league._users || []).forEach(u => {
+        if (u.display_name) teamByMgr[canonical(u.display_name)] = (u.metadata && u.metadata.team_name) || u.display_name;
+      });
+      (podium || []).forEach((p, i) => {
+        if (!p) return;
+        const m = canonical(p.manager);
+        placeByMgr[m] = i;
+        teamByMgr[m] = p.teamName || teamByMgr[m];
+      });
+      return { season: league.season, placeByMgr, teamByMgr, participants: new Set(Object.keys(teamByMgr)) };
+    });
+    const tallyByMgr = {};
+    allRows.forEach(r => { tallyByMgr[r.manager] = r; });
+
+    let pfOverlay = document.getElementById('profile-overlay');
+    if (!pfOverlay) {
+      pfOverlay = document.createElement('div');
+      pfOverlay.id = 'profile-overlay';
+      pfOverlay.className = 'roster-overlay';
+      pfOverlay.hidden = true;
+      pfOverlay.innerHTML =
+        '<div class="ro-backdrop" data-close></div>' +
+        '<div class="ro-dialog" role="dialog" aria-modal="true"><button class="ro-close" data-close aria-label="Close">×</button><div class="ro-content"></div></div>';
+      document.body.appendChild(pfOverlay);
+      pfOverlay.addEventListener('click', e => { if (e.target.hasAttribute('data-close')) closePf(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pfOverlay.hidden) closePf(); });
+    }
+    const pfContent = pfOverlay.querySelector('.ro-content');
+    let pfLastFocus = null;
+    function closePf() { pfOverlay.hidden = true; document.body.style.overflow = ''; if (pfLastFocus) pfLastFocus.focus(); }
+    function openProfile(mgr) {
+      const r = tallyByMgr[mgr];
+      if (!r) return;
+      const av = avatarHtml({ avatar: r.avatar, teamName: mgr }, 'ro-avatar');
+      const p = profit(r);
+      const seasonRows = seasonInfo.map(si => {
+        const played = si.participants.has(mgr);
+        const place = si.placeByMgr[mgr];
+        const team = si.teamByMgr[mgr] || '';
+        let badge;
+        if (!played) badge = `<span class="pf-finish pf-dnp">Did not play</span>`;
+        else if (place === undefined) badge = `<span class="pf-finish pf-out">Missed podium</span>`;
+        else badge = `<span class="pf-finish ${PLACE_META[place].cls}">${PLACE_META[place].medal} ${PLACE_META[place].label}</span>`;
+        return `<div class="pf-row">
+            <span class="pf-year">${escHtml(si.season)}</span>
+            ${badge}
+            <span class="pf-team">${played ? escHtml(team) : ''}</span>
+          </div>`;
+      }).join('');
+      pfContent.innerHTML = `
+        <div class="ro-header">
+          ${av}
+          <div class="ro-names">
+            <div class="ro-team">@${escHtml(mgr)}</div>
+            <div class="ro-mgr">${r.seasons} season${r.seasons === 1 ? '' : 's'} · ${fmtProfit(p)}</div>
+          </div>
+        </div>
+        <div class="pf-medals">
+          <span class="${r.g ? '' : 'pf-zero'}">🥇 ${r.g}</span>
+          <span class="${r.s ? '' : 'pf-zero'}">🥈 ${r.s}</span>
+          <span class="${r.b ? '' : 'pf-zero'}">🥉 ${r.b}</span>
+        </div>
+        <div class="pf-seasons">${seasonRows}</div>`;
+      pfLastFocus = document.activeElement;
+      pfOverlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      pfOverlay.querySelector('.ro-dialog').scrollTop = 0;
+      pfOverlay.querySelector('.ro-close').focus();
+    }
+    const openFromEl = elx => { const m = elx.getAttribute('data-mgr'); if (m) openProfile(m); };
+    wrap.addEventListener('click', e => { const t = e.target.closest('[data-mgr]'); if (t) { e.stopPropagation(); openFromEl(t); } });
+    wrap.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const t = e.target.closest('[data-mgr]');
+      if (t) { e.preventDefault(); openFromEl(t); }
     });
 
     return wrap;
