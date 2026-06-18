@@ -254,6 +254,11 @@
       padding: 14px 14px 12px;
       box-shadow: 0 0 0 1px #3a1a08, 0 4px 14px rgba(0,0,0,0.5);
     }
+    .stat-card { cursor: pointer; transition: transform 0.12s, border-color 0.15s, box-shadow 0.15s; -webkit-tap-highlight-color: transparent; }
+    .stat-card:hover { transform: translateY(-2px); border-color: #a06030; box-shadow: 0 0 0 1px #5c2d10, 0 8px 22px rgba(0,0,0,0.6); }
+    .stat-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .stat-go { margin-left: auto; color: var(--muted); font-size: 1.1rem; line-height: 1; transition: transform 0.15s, color 0.15s; }
+    .stat-card:hover .stat-go { color: var(--gold); transform: translateX(2px); }
     .stat-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
     .stat-emoji { font-size: 1.1rem; }
     .stat-lbl {
@@ -1099,6 +1104,31 @@
     }
     .ro-mgr { font-family: var(--font-body); font-style: italic; font-size: 0.82rem; color: var(--muted); }
     .ro-roster { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+
+    /* Stat list modal (top-10 blowouts / scores / closest / rivalries) */
+    .sl-head {
+      font-family: var(--font-display); font-weight: 700; font-size: 1.05rem;
+      color: var(--gold); text-align: center; margin-bottom: 12px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .sl-list { display: flex; flex-direction: column; }
+    .sl-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 2px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .sl-row:last-child { border-bottom: none; }
+    .sl-rank {
+      font-family: var(--font-display); font-weight: 700; font-size: 0.78rem;
+      color: var(--muted); width: 1.6em; flex-shrink: 0; text-align: right;
+    }
+    .sl-main { min-width: 0; flex: 1; }
+    .sl-1 { font-family: var(--font-body); font-size: 0.84rem; color: #f0e8d8; overflow-wrap: anywhere; word-break: break-word; }
+    .sl-2 { font-family: var(--font-body); font-style: italic; font-size: 0.72rem; color: var(--muted); margin-top: 1px; overflow-wrap: anywhere; }
+    .sl-val {
+      font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
+      color: var(--gold); flex-shrink: 0; white-space: nowrap;
+    }
 
     /* Manager profile modal */
     .tc-row { cursor: pointer; }
@@ -1960,7 +1990,8 @@
   function computeRecords(perSeason) {
     const standings = {};
     const ensure = m => standings[m] || (standings[m] = { manager: m, w: 0, l: 0, t: 0, pf: 0, games: 0 });
-    let blowout = null, highest = null, closest = null;
+    const gameList = [];   // every decided game (for blowouts + closest)
+    const perfList = [];   // every team-week score (for highest)
     const h2h = {};
     perSeason.forEach(se => {
       se.weeks.forEach((mw, wi) => {
@@ -1979,16 +2010,14 @@
           ensure(mx); ensure(my);
           standings[mx].pf += px; standings[my].pf += py;
           standings[mx].games++; standings[my].games++;
-          [[mx, px], [my, py]].forEach(([m, p]) => {
-            if (!highest || p > highest.pts) highest = { season: se.season, week, manager: m, pts: p };
-          });
+          perfList.push({ season: se.season, week, manager: mx, pts: px });
+          perfList.push({ season: se.season, week, manager: my, pts: py });
           if (px === py) { standings[mx].t++; standings[my].t++; return; }
           const margin = Math.abs(px - py);
           const winM = px > py ? mx : my, loseM = px > py ? my : mx;
           const winP = Math.max(px, py), loseP = Math.min(px, py);
           standings[winM].w++; standings[loseM].l++;
-          if (!blowout || margin > blowout.margin) blowout = { season: se.season, week, winner: winM, loser: loseM, ws: winP, ls: loseP, margin };
-          if (!closest || margin < closest.margin) closest = { season: se.season, week, winner: winM, loser: loseM, ws: winP, ls: loseP, margin };
+          gameList.push({ season: se.season, week, winner: winM, loser: loseM, ws: winP, ls: loseP, margin });
           const a = winM < loseM ? winM : loseM, b = winM < loseM ? loseM : winM;
           const key = a + '|' + b;
           const rec = h2h[key] || (h2h[key] = { a, b, aw: 0, bw: 0, games: 0 });
@@ -1999,11 +2028,24 @@
     const standingsArr = Object.values(standings).filter(r => r.games > 0);
     standingsArr.forEach(r => { r.pct = (r.w + 0.5 * r.t) / r.games; r.ppg = r.pf / r.games; });
     standingsArr.sort((a, b) => b.pct - a.pct || b.pf - a.pf);
-    const rivals = Object.values(h2h);
-    const rivalry = rivals.length
-      ? rivals.reduce((best, r) => (r.games > best.games || (r.games === best.games && Math.abs(r.aw - r.bw) > Math.abs(best.aw - best.bw))) ? r : best, rivals[0])
-      : null;
-    return { standings: standingsArr, blowout, highest, closest, rivalry };
+    const byMarginDesc = [...gameList].sort((a, b) => b.margin - a.margin);
+    const byMarginAsc = [...gameList].sort((a, b) => a.margin - b.margin);
+    const byPts = [...perfList].sort((a, b) => b.pts - a.pts);
+    const rivalries = Object.values(h2h).filter(r => r.games >= 2)
+      .sort((a, b) => b.games - a.games || Math.abs(b.aw - b.bw) - Math.abs(a.aw - a.bw));
+    return {
+      standings: standingsArr,
+      blowout: byMarginDesc[0] || null,
+      highest: byPts[0] || null,
+      closest: byMarginAsc[0] || null,
+      rivalry: rivalries[0] || null,
+      lists: {
+        blowout: byMarginDesc.slice(0, 10),
+        highest: byPts.slice(0, 10),
+        closest: byMarginAsc.slice(0, 10),
+        rivalry: rivalries.slice(0, 10),
+      },
+    };
   }
 
   async function renderRecords(seasons) {
@@ -2039,20 +2081,20 @@
     const pts = n => n.toFixed(1);
     const pctFmt = p => (p === 1 ? '1.000' : p.toFixed(3).replace(/^0/, ''));
     const cards = [];
-    if (stats.blowout) cards.push({ emoji: '💥', lbl: 'Biggest Blowout', big: '+' + pts(stats.blowout.margin),
+    if (stats.blowout) cards.push({ stat: 'blowout', emoji: '💥', lbl: 'Biggest Blowout', big: '+' + pts(stats.blowout.margin),
       d1: `@${stats.blowout.winner} over @${stats.blowout.loser}`, d2: `${pts(stats.blowout.ws)}–${pts(stats.blowout.ls)} · ${stats.blowout.season} Wk ${stats.blowout.week}` });
-    if (stats.highest) cards.push({ emoji: '🔥', lbl: 'Highest Score', big: pts(stats.highest.pts),
+    if (stats.highest) cards.push({ stat: 'highest', emoji: '🔥', lbl: 'Highest Score', big: pts(stats.highest.pts),
       d1: `@${stats.highest.manager}`, d2: `${stats.highest.season} Wk ${stats.highest.week}` });
-    if (stats.closest) cards.push({ emoji: '😬', lbl: 'Closest Game', big: '+' + pts(stats.closest.margin),
+    if (stats.closest) cards.push({ stat: 'closest', emoji: '😬', lbl: 'Closest Game', big: '+' + pts(stats.closest.margin),
       d1: `@${stats.closest.winner} over @${stats.closest.loser}`, d2: `${pts(stats.closest.ws)}–${pts(stats.closest.ls)} · ${stats.closest.season} Wk ${stats.closest.week}` });
     if (stats.rivalry && stats.rivalry.games >= 2) {
       const r = stats.rivalry;
       const lead = r.aw === r.bw ? `dead even ${r.aw}–${r.bw}` : (r.aw > r.bw ? `@${r.a} leads ${r.aw}–${r.bw}` : `@${r.b} leads ${r.bw}–${r.aw}`);
-      cards.push({ emoji: '⚔️', lbl: 'Top Rivalry', big: r.games + ' mtgs', d1: `@${r.a} vs @${r.b}`, d2: lead });
+      cards.push({ stat: 'rivalry', emoji: '⚔️', lbl: 'Top Rivalry', big: r.games + ' mtgs', d1: `@${r.a} vs @${r.b}`, d2: lead });
     }
     const cardsHtml = cards.map(c => `
-      <div class="stat-card">
-        <div class="stat-top"><span class="stat-emoji">${c.emoji}</span><span class="stat-lbl">${escHtml(c.lbl)}</span></div>
+      <div class="stat-card" data-stat="${c.stat}" role="button" tabindex="0" aria-haspopup="dialog">
+        <div class="stat-top"><span class="stat-emoji">${c.emoji}</span><span class="stat-lbl">${escHtml(c.lbl)}</span><span class="stat-go">›</span></div>
         <div class="stat-big">${escHtml(c.big)}</div>
         <div class="stat-d1">${escHtml(c.d1)}</div>
         <div class="stat-d2">${escHtml(c.d2)}</div>
@@ -2119,6 +2161,62 @@
       t.addEventListener('click', () => sortBy(t.dataset.key));
       t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(t.dataset.key); } });
     });
+
+    // ── Tap a highlight card → modal with the full top-10 list ──
+    const STAT_TITLE = { blowout: '💥 Biggest Blowouts', highest: '🔥 Highest Scores', closest: '😬 Closest Games', rivalry: '⚔️ Top Rivalries' };
+    const slRow = (rank, primary, secondary, val) => `
+      <div class="sl-row">
+        <span class="sl-rank">${rank}</span>
+        <div class="sl-main"><div class="sl-1">${primary}</div><div class="sl-2">${secondary}</div></div>
+        <span class="sl-val">${val}</span>
+      </div>`;
+    const statRows = type => {
+      const L = (stats.lists && stats.lists[type]) || [];
+      if (type === 'highest') return L.map((e, i) => slRow(i + 1, `@${escHtml(e.manager)}`, `${escHtml(e.season)} · Wk ${e.week}`, pts(e.pts))).join('');
+      if (type === 'rivalry') return L.map((e, i) => {
+        const lead = e.aw === e.bw ? `even ${e.aw}–${e.bw}` : (e.aw > e.bw ? `@${escHtml(e.a)} ${e.aw}–${e.bw}` : `@${escHtml(e.b)} ${e.bw}–${e.aw}`);
+        return slRow(i + 1, `@${escHtml(e.a)} vs @${escHtml(e.b)}`, `${e.games} meetings`, lead);
+      }).join('');
+      return L.map((e, i) => slRow(i + 1, `@${escHtml(e.winner)} over @${escHtml(e.loser)}`,
+        `${escHtml(e.season)} · Wk ${e.week} · ${pts(e.ws)}–${pts(e.ls)}`, '+' + pts(e.margin))).join('');
+    };
+
+    let slOverlay = document.getElementById('stat-overlay');
+    if (!slOverlay) {
+      slOverlay = document.createElement('div');
+      slOverlay.id = 'stat-overlay';
+      slOverlay.className = 'roster-overlay';
+      slOverlay.hidden = true;
+      slOverlay.innerHTML =
+        '<div class="ro-backdrop" data-close></div>' +
+        '<div class="ro-dialog" role="dialog" aria-modal="true"><button class="ro-close" data-close aria-label="Close">×</button><div class="ro-content"></div></div>';
+      document.body.appendChild(slOverlay);
+      slOverlay.addEventListener('click', e => { if (e.target.hasAttribute('data-close')) closeSl(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !slOverlay.hidden) closeSl(); });
+    }
+    const slContent = slOverlay.querySelector('.ro-content');
+    let slLastFocus = null;
+    function closeSl() { slOverlay.hidden = true; document.body.style.overflow = ''; if (slLastFocus) slLastFocus.focus(); }
+    function openStat(type) {
+      const rowsHtml = statRows(type);
+      if (!rowsHtml) return;
+      slContent.innerHTML = `<div class="sl-head">${STAT_TITLE[type] || ''}</div><div class="sl-list">${rowsHtml}</div>`;
+      slLastFocus = document.activeElement;
+      slOverlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      slOverlay.querySelector('.ro-dialog').scrollTop = 0;
+      slOverlay.querySelector('.ro-close').focus();
+    }
+    const cardsWrap = document.querySelector('#all-time .stat-cards');
+    if (cardsWrap) {
+      const openFromCard = c => { const type = c.getAttribute('data-stat'); if (type) openStat(type); };
+      cardsWrap.addEventListener('click', e => { const c = e.target.closest('.stat-card'); if (c) openFromCard(c); });
+      cardsWrap.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const c = e.target.closest('.stat-card');
+        if (c) { e.preventDefault(); openFromCard(c); }
+      });
+    }
 
     section.style.display = 'block';
   }
