@@ -315,6 +315,9 @@
       text-shadow: 0 1px 2px rgba(0,0,0,0.8);
     }
     .tc-table thead th.num { text-align: center; }
+    .tc-table thead th.tc-sortable { cursor: pointer; user-select: none; transition: color 0.15s; }
+    .tc-table thead th.tc-sortable:hover { color: var(--gold); }
+    .tc-table thead th .sort-ind { color: var(--gold); font-size: 0.85em; }
     .tc-table tbody td {
       padding: 13px 18px;
       border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -420,7 +423,7 @@
 
     /* Smooth anchor scrolling with offset so headings aren't flush to the top */
     html { scroll-behavior: smooth; }
-    #season-preview, #trophy-case, #past-seasons { scroll-margin-top: 16px; }
+    #season-preview, #trophy-case, #past-seasons { scroll-margin-top: 64px; }
 
     .season-card {
       background:
@@ -1161,6 +1164,84 @@
     /* ── BELLS & WHISTLES ── */
     .trophy-icon { cursor: pointer; }
 
+    /* Condensed sticky nav (slides in after the hero) */
+    #mini-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 16px;
+      background: linear-gradient(180deg, #2e1006 0%, #1c0a03 100%);
+      border-bottom: 2px solid var(--wood-highlight);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.55);
+      transform: translateY(-110%);
+      transition: transform 0.28s ease;
+    }
+    #mini-nav.show { transform: translateY(0); }
+    .mn-brand {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+    .mn-links { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    #mini-nav .navlink {
+      padding: 6px 12px;
+      margin: 0;
+      border: none;
+      background: none;
+      border-radius: 4px;
+      font-size: 0.74rem;
+      box-shadow: none;
+      min-height: 0;
+      transition: color 0.15s, background 0.15s;
+    }
+    #mini-nav .navlink:hover { background: rgba(245,200,66,0.08); }
+    #mini-nav .navlink.active { color: var(--gold); background: rgba(245,200,66,0.14); border: none; font-weight: 700; }
+    .mn-share {
+      border: 1px solid var(--wood-highlight);
+      background: linear-gradient(180deg, #4a2010, #2e1006);
+      color: var(--gold);
+      border-radius: 5px;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 6px 8px;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.15s;
+    }
+    .mn-share:hover { border-color: #a06030; transform: translateY(-1px); }
+    .mn-share:active { transform: translateY(0); }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 78px; left: 50%;
+      transform: translateX(-50%) translateY(14px);
+      z-index: 1300;
+      background: linear-gradient(160deg, #2a1208, #160800);
+      border: 1px solid var(--wood-highlight);
+      color: var(--gold-light);
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      padding: 9px 16px;
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      .mn-brand { font-size: 1.1rem; }
+      .mn-brand-text { display: none; } /* show just 👀 on phones — never truncate */
+      #mini-nav .navlink { padding: 6px 9px; font-size: 0.7rem; }
+      #mini-nav { padding: 7px 10px; }
+    }
+
     #scroll-progress {
       position: fixed;
       top: 0; left: 0;
@@ -1234,6 +1315,18 @@
 <body>
 
 <div id="scroll-progress"></div>
+
+<div id="mini-nav">
+  <span class="mn-brand">👀<span class="mn-brand-text"> Dynasty Year IV</span></span>
+  <nav class="mn-links">
+    <a class="navlink" href="#season-preview">Preview</a>
+    <a class="navlink" href="#trophy-case">Trophy</a>
+    <a class="navlink" href="#past-seasons">Seasons</a>
+    <button id="share-btn" class="mn-share" title="Copy link" aria-label="Copy link to this page">🔗</button>
+  </nav>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
 
 <div class="hero">
   <div class="trophy-icon">🏆</div>
@@ -1625,17 +1718,59 @@
             </colgroup>
             <thead>
               <tr>
-                <th>Manager</th>
-                <th class="num">Gold</th>
-                <th class="num">Silver</th>
-                <th class="num">Bronze</th>
-                <th class="num">Profit</th>
+                <th class="tc-sortable" data-key="mgr">Manager<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="g">Gold<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="s">Silver<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="b">Bronze<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="profit">Profit<span class="sort-ind"></span></th>
               </tr>
             </thead>
             <tbody>${body}</tbody>
           </table>
         </div>
       </div>`;
+
+    // Click a column header to sort the medal rows (cobweb row always stays last)
+    const table = wrap.querySelector('.tc-table');
+    const tbody = table.querySelector('tbody');
+    const ths = [...table.querySelectorAll('th.tc-sortable')];
+    const parseCell = (tr, idx, key) => {
+      const cell = tr.children[idx];
+      if (key === 'mgr') return cell.textContent.trim().toLowerCase();
+      if (key === 'profit') {
+        const t = cell.textContent.replace(/[^0-9.-]/g, '');
+        return parseFloat(t) || 0;
+      }
+      const m = cell.textContent.match(/\d+/);
+      return m ? +m[0] : 0;
+    };
+    let sortState = { key: null, asc: false };
+    const applySort = key => {
+      const idx = ths.findIndex(t => t.dataset.key === key);
+      const asc = sortState.key === key ? !sortState.asc : (key === 'mgr');
+      sortState = { key, asc };
+      const rows = [...tbody.querySelectorAll('tr:not(.tc-cobweb-row)')];
+      const cobweb = tbody.querySelector('.tc-cobweb-row');
+      rows.sort((a, b) => {
+        const va = parseCell(a, idx, key), vb = parseCell(b, idx, key);
+        if (va < vb) return asc ? -1 : 1;
+        if (va > vb) return asc ? 1 : -1;
+        return 0;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      if (cobweb) tbody.appendChild(cobweb);
+      ths.forEach(t => {
+        const ind = t.querySelector('.sort-ind');
+        ind.textContent = t.dataset.key === key ? (asc ? ' ▲' : ' ▼') : '';
+      });
+    };
+    ths.forEach(t => {
+      t.addEventListener('click', () => applySort(t.dataset.key));
+      t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); applySort(t.dataset.key); } });
+      t.tabIndex = 0;
+      t.setAttribute('role', 'button');
+    });
+
     return wrap;
   }
 
@@ -2292,15 +2427,14 @@
 
   main();
 
-  // Highlight the nav link for whichever section is currently in view
+  // Highlight the nav link(s) for whichever section is currently in view
+  // (covers both the hero tabs and the condensed sticky nav)
   (function navSpy() {
-    const links = [...document.querySelectorAll('.topnav .navlink')];
-    const byId = id => links.find(l => l.getAttribute('href') === '#' + id);
+    const links = [...document.querySelectorAll('.navlink')];
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => {
         if (e.isIntersecting) {
-          links.forEach(l => l.classList.remove('active'));
-          byId(e.target.id)?.classList.add('active');
+          links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
         }
       });
     }, { rootMargin: '-20% 0px -70% 0px' });
@@ -2314,20 +2448,48 @@
   (function enhancements() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Scroll progress bar + back-to-top visibility
+    // Scroll progress bar + back-to-top + sticky mini-nav visibility
     const bar = document.getElementById('scroll-progress');
     const btt = document.getElementById('back-to-top');
+    const mini = document.getElementById('mini-nav');
+    const hero = document.querySelector('.hero');
     const onScroll = () => {
       const h = document.documentElement;
       const max = h.scrollHeight - h.clientHeight;
       const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
       if (bar) bar.style.width = pct + '%';
       if (btt) btt.classList.toggle('show', h.scrollTop > 600);
+      if (mini && hero) mini.classList.toggle('show', h.scrollTop > hero.offsetHeight - 10);
     };
     document.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     if (btt) btt.addEventListener('click', () =>
       window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
+
+    // Toast helper + share (copy link) button
+    const toast = document.getElementById('toast');
+    let toastTimer;
+    const showToast = msg => {
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    };
+    const share = document.getElementById('share-btn');
+    if (share) share.addEventListener('click', async () => {
+      const url = location.href;
+      try {
+        if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+          await navigator.share({ title: document.title, url });
+        } else {
+          await navigator.clipboard.writeText(url);
+          showToast('🔗 Link copied to clipboard');
+        }
+      } catch (e) {
+        showToast('🔗 ' + url);
+      }
+    });
 
     // Count-up animation for trophy numbers
     const fmtMoney = v => v === 0 ? '$0' : (v > 0 ? '+$' : '-$') + Math.abs(Math.round(v));
