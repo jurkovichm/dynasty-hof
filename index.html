@@ -39,7 +39,7 @@
 
     body {
       background-color: var(--bg);
-      overflow-x: hidden;
+      overflow-x: clip; /* prevent horizontal scroll without making <body> a scroll container */
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
       background-image:
@@ -1117,9 +1117,83 @@
       color: var(--gold);
       text-decoration: none;
     }
+
+    /* ── BELLS & WHISTLES ── */
+    .trophy-icon { cursor: pointer; }
+
+    #scroll-progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px; width: 0;
+      background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-light));
+      box-shadow: 0 0 8px rgba(245,200,66,0.6);
+      z-index: 1200;
+    }
+
+    #back-to-top {
+      position: fixed;
+      bottom: 20px; right: 18px;
+      z-index: 900;
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      border: 2px solid var(--wood-highlight);
+      background: linear-gradient(180deg, #4a2010, #2e1006);
+      color: var(--gold);
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,220,150,0.15);
+      opacity: 0; transform: translateY(12px) scale(0.9); pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s, color 0.15s, border-color 0.15s;
+    }
+    #back-to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+    #back-to-top:hover { color: var(--gold-light); border-color: #a06030; }
+
+    /* Scroll reveal — only active once JS adds .reveal-ready to <html> */
+    .reveal-ready .reveal { opacity: 0; transform: translateY(18px); }
+    .reveal-ready .reveal.reveal-in {
+      opacity: 1; transform: none;
+      transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.2,0.7,0.2,1);
+    }
+
+    /* Chart dot tooltip */
+    .vc-tip {
+      position: absolute;
+      z-index: 5;
+      transform: translate(-50%, -100%);
+      background: linear-gradient(160deg, #2a1208, #160800);
+      border: 1px solid var(--wood-highlight);
+      border-radius: 4px;
+      padding: 6px 9px;
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      line-height: 1.35;
+      color: var(--text);
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+    .vc-tip b { color: var(--gold-light); }
+    .vc-dot { cursor: pointer; }
+
+    /* Confetti */
+    .confetti-piece {
+      position: fixed; top: 0; left: 0;
+      width: 9px; height: 14px;
+      z-index: 1300; pointer-events: none;
+      border-radius: 1px;
+      will-change: transform, opacity;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal-ready .reveal { opacity: 1 !important; transform: none !important; }
+      .lombardi, .trophy-icon { animation: none !important; }
+    }
   </style>
 </head>
 <body>
+
+<div id="scroll-progress"></div>
 
 <div class="hero">
   <div class="trophy-icon">🏆</div>
@@ -1146,6 +1220,8 @@
   <div class="section-sub">Every chapter of the dynasty, immortalized</div>
   <div id="seasons"></div>
 </section>
+
+<button id="back-to-top" aria-label="Back to top" title="Back to top">↑</button>
 
 <footer>
   Powered by the <a href="https://sleeper.com" target="_blank">Sleeper</a> API &nbsp;·&nbsp; Dynasty Year IV
@@ -1443,10 +1519,10 @@
       return `
         <tr>
           <td><div class="tc-manager">${av}<span>@${escHtml(r.manager)}</span></div></td>
-          <td class="tc-count ${r.g ? '' : 'zero'}" data-label="Gold">${r.g ? '🥇 ' + r.g : '–'}</td>
-          <td class="tc-count ${r.s ? '' : 'zero'}" data-label="Silver">${r.s ? '🥈 ' + r.s : '–'}</td>
-          <td class="tc-count ${r.b ? '' : 'zero'}" data-label="Bronze">${r.b ? '🥉 ' + r.b : '–'}</td>
-          <td class="tc-count tc-profit ${profitClass}" data-label="Profit">${fmtProfit(p)}</td>
+          <td class="tc-count ${r.g ? '' : 'zero'}" data-label="Gold">${r.g ? '🥇 <span class="cup" data-to="' + r.g + '">' + r.g + '</span>' : '–'}</td>
+          <td class="tc-count ${r.s ? '' : 'zero'}" data-label="Silver">${r.s ? '🥈 <span class="cup" data-to="' + r.s + '">' + r.s + '</span>' : '–'}</td>
+          <td class="tc-count ${r.b ? '' : 'zero'}" data-label="Bronze">${r.b ? '🥉 <span class="cup" data-to="' + r.b + '">' + r.b + '</span>' : '–'}</td>
+          <td class="tc-count tc-profit ${profitClass}" data-label="Profit"><span class="cup-money" data-to="${p}">${fmtProfit(p)}</span></td>
         </tr>`;
     });
 
@@ -1918,9 +1994,12 @@
       // vertically per side so they never stack; a leader line connects any
       // label that had to be nudged off its dot.
       const R = 10, GAP = R + 5, MINGAP = 15, midX = M.l + pw / 2;
+      // Potential rank (roster + picks dynasty value) for the dot tooltip
+      const potRank = new Map([...teams].sort((a, b) => b.potential - a.potential).map((t, i) => [t, i + 1]));
       const nodes = teams.map((t, i) => {
         const cx = sx(t.starterRd), cy = sy(t.potential);
-        return { rank: i + 1, cx, cy, side: cx > midX ? 'L' : 'R', label: '@' + t.manager, fill: dotFill(i + 1) };
+        const tip = `<b>${escHtml(t.teamName)}</b><br>@${escHtml(t.manager)}<br>Current #${i + 1} · Potential #${potRank.get(t)}`;
+        return { rank: i + 1, cx, cy, side: cx > midX ? 'L' : 'R', label: '@' + t.manager, fill: dotFill(i + 1), tip };
       });
       ['L', 'R'].forEach(side => {
         let prev = -Infinity;
@@ -1933,7 +2012,7 @@
         const leader = Math.abs(n.ly - n.cy) > 1.5
           ? `<line x1="${(n.side === 'L' ? n.cx - R : n.cx + R).toFixed(1)}" y1="${n.cy.toFixed(1)}" x2="${lx.toFixed(1)}" y2="${n.ly.toFixed(1)}" class="vc-leader"/>`
           : '';
-        return `<g class="vc-dot">
+        return `<g class="vc-dot" tabindex="0" data-tip="${n.tip}">
             ${leader}
             <circle cx="${n.cx.toFixed(1)}" cy="${n.cy.toFixed(1)}" r="${R}" fill="${n.fill}" stroke="#1e0d05" stroke-width="1.5"/>
             <text x="${n.cx.toFixed(1)}" y="${(n.cy + 3.3).toFixed(1)}" text-anchor="middle" class="vc-rank">${n.rank}</text>
@@ -2058,6 +2137,32 @@
       const card = e.target.closest('.preview-card');
       if (card) { e.preventDefault(); openFromCard(card); }
     });
+
+    // Chart dot tooltips (hover on desktop, tap/focus on touch + keyboard)
+    const chartEl = el.querySelector('.value-chart');
+    if (chartEl) {
+      const tip = document.createElement('div');
+      tip.className = 'vc-tip';
+      tip.hidden = true;
+      chartEl.appendChild(tip);
+      const showTip = g => {
+        tip.innerHTML = g.dataset.tip || '';
+        tip.hidden = false;
+        const cr = chartEl.getBoundingClientRect();
+        const dr = g.querySelector('circle').getBoundingClientRect();
+        tip.style.left = (dr.left + dr.width / 2 - cr.left) + 'px';
+        tip.style.top = (dr.top - cr.top - 6) + 'px';
+      };
+      const hideTip = () => { tip.hidden = true; };
+      chartEl.querySelectorAll('.vc-dot').forEach(g => {
+        g.addEventListener('mouseenter', () => showTip(g));
+        g.addEventListener('mouseleave', hideTip);
+        g.addEventListener('focus', () => showTip(g));
+        g.addEventListener('blur', hideTip);
+        g.addEventListener('click', e => { e.stopPropagation(); showTip(g); });
+      });
+      document.addEventListener('click', hideTip);
+    }
   }
 
   async function main() {
@@ -2137,6 +2242,91 @@
     ['season-preview', 'trophy-case', 'past-seasons'].forEach(id => {
       const el = document.getElementById(id);
       if (el) obs.observe(el);
+    });
+  })();
+
+  // ── Bells & whistles: progress bar, back-to-top, scroll reveal, count-ups, confetti ──
+  (function enhancements() {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Scroll progress bar + back-to-top visibility
+    const bar = document.getElementById('scroll-progress');
+    const btt = document.getElementById('back-to-top');
+    const onScroll = () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (bar) bar.style.width = pct + '%';
+      if (btt) btt.classList.toggle('show', h.scrollTop > 600);
+    };
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    if (btt) btt.addEventListener('click', () =>
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
+
+    // Count-up animation for trophy numbers
+    const fmtMoney = v => v === 0 ? '$0' : (v > 0 ? '+$' : '-$') + Math.abs(Math.round(v));
+    const animateCount = elc => {
+      const to = +elc.dataset.to;
+      const money = elc.classList.contains('cup-money');
+      const dur = 900, start = performance.now();
+      const step = now => {
+        const t = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const v = to * eased;
+        elc.textContent = money ? fmtMoney(v) : Math.round(v);
+        if (t < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+    const runCounts = root => root.querySelectorAll('.cup, .cup-money').forEach(animateCount);
+
+    // Scroll reveal (and trigger count-ups when the trophy cabinet appears)
+    const REVEAL_SEL = '.season-card, .preview-card, .value-chart, .tc-cabinet, .podium-place';
+    if (!reduceMotion && 'IntersectionObserver' in window) {
+      document.documentElement.classList.add('reveal-ready');
+      const io = new IntersectionObserver((entries, obs) => {
+        entries.forEach(e => {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('reveal-in');
+          if (e.target.classList.contains('tc-cabinet')) runCounts(e.target);
+          obs.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+      const tag = () => document.querySelectorAll(REVEAL_SEL).forEach(elx => {
+        if (!elx.classList.contains('reveal')) { elx.classList.add('reveal'); io.observe(elx); }
+      });
+      new MutationObserver(tag).observe(document.body, { childList: true, subtree: true });
+      tag();
+    }
+
+    // Confetti burst (tap a champion card or the hero trophy)
+    const COLORS = ['#f5c842', '#ffe88a', '#c0c0c0', '#cd7f32', '#fff8d0', '#7add7a'];
+    const burst = (x, y) => {
+      if (reduceMotion) return;
+      for (let i = 0; i < 90; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-piece';
+        p.style.background = COLORS[i % COLORS.length];
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        document.body.appendChild(p);
+        const ang = Math.random() * Math.PI * 2;
+        const dist = 70 + Math.random() * 190;
+        const dx = Math.cos(ang) * dist;
+        const dy = Math.sin(ang) * dist + 140 + Math.random() * 220;
+        const rot = Math.random() * 720 - 360;
+        p.animate([
+          { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity: 0 }
+        ], { duration: 1100 + Math.random() * 800, easing: 'cubic-bezier(0.2,0.6,0.2,1)' })
+          .onfinish = () => p.remove();
+      }
+    };
+    document.addEventListener('click', e => {
+      if (e.target.closest('.place-1 .place-card') || e.target.closest('.trophy-icon')) {
+        burst(e.clientX || window.innerWidth / 2, e.clientY || 80);
+      }
     });
   })();
 </script>
