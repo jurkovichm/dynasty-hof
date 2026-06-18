@@ -1664,6 +1664,29 @@
     return r.json();
   }
 
+  // Full Sleeper player map (id → {n,p,t}) — fetched once and cached. Used as a
+  // name fallback for players not in the trimmed rostered-players.json (e.g.
+  // historical box-score starters). NFL is populated when the fetch resolves.
+  let NFL = {};
+  let _nflPromise = null;
+  function loadNflPlayers() {
+    if (!_nflPromise) {
+      _nflPromise = fetchJSON(`${API}/players/nfl`).then(d => {
+        const m = {};
+        for (const id in d) {
+          const p = d[id] || {};
+          const name = p.full_name
+            || [p.first_name, p.last_name].filter(Boolean).join(' ')
+            || (p.position === 'DEF' ? ((p.team || id) + ' D/ST') : id);
+          m[id] = { n: name, p: p.position || '', t: p.team || '' };
+        }
+        NFL = m;
+        return m;
+      }).catch(() => ({}));
+    }
+    return _nflPromise;
+  }
+
   async function getLeagueChain(startId) {
     const chain = [];
     let id = startId;
@@ -2159,6 +2182,7 @@
     const mgrAvatar = {};
     let playerMap = {};
     try { playerMap = await fetchJSON('rostered-players.json'); } catch (e) { /* names best-effort */ }
+    await loadNflPlayers(); // full player names for historical starters (cached)
     const perSeason = [];
     for (const { league } of completed) {
       try {
@@ -2272,7 +2296,7 @@
     const STAT_TITLE = { blowout: '💥 Biggest Blowouts', highest: '🔥 Highest Scores', closest: '😬 Closest Games', rivalry: '⚔️ Top Rivalries' };
     const SLOT_LABEL = { QB: 'QB', RB: 'RB', WR: 'WR', TE: 'TE', K: 'K', DEF: 'DEF', FLEX: 'FLEX', SUPER_FLEX: 'SF', REC_FLEX: 'W/T', WRRB_FLEX: 'W/R', WRRB_WRT_FLEX: 'FLEX', IDP_FLEX: 'IDP' };
     const slotName = s => SLOT_LABEL[s] || s;
-    const pname = id => (id && id !== '0') ? ((playerMap[id] && playerMap[id].n) || 'Player') : '—';
+    const pname = id => (id && id !== '0') ? ((playerMap[id] && playerMap[id].n) || (NFL[id] && NFL[id].n) || 'Player') : '—';
     const slotPts = (entry, i) => {
       if (entry.starters_points && entry.starters_points[i] != null) return entry.starters_points[i];
       const sid = entry.starters && entry.starters[i];
@@ -2808,14 +2832,21 @@
     // Full live roster grouped by position — shown in the tap-to-open overlay.
     const ROSTER_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF'];
     const rosterGroupsHtml = t => {
+      // Resolve name/pos/team at render time, falling back to the full NFL map
       const groups = {};
-      (t.roster || []).forEach(p => { (groups[p.pos] = groups[p.pos] || []).push(p); });
+      (t.roster || []).forEach(p => {
+        const nfl = NFL[p.pid] || {};
+        const name = p.name || nfl.n || 'Unknown';
+        const pos = (p.pos && p.pos !== '?') ? p.pos : (nfl.p || '?');
+        const team = p.nfl || nfl.t || '';
+        (groups[pos] = groups[pos] || []).push({ name, team, age: p.age });
+      });
       const order = [...ROSTER_ORDER, ...Object.keys(groups).filter(p => !ROSTER_ORDER.includes(p))];
       const sections = order.filter(pos => groups[pos] && groups[pos].length).map(pos => {
         const rows = groups[pos].map(p => `
           <li class="rp-player">
-            <span class="rp-name">${escHtml(p.name || 'Unknown')}</span>
-            <span class="rp-meta">${escHtml(p.nfl || 'FA')}${p.age ? ' · ' + p.age : ''}</span>
+            <span class="rp-name">${escHtml(p.name)}</span>
+            <span class="rp-meta">${escHtml(p.team || 'FA')}${p.age ? ' · ' + p.age : ''}</span>
           </li>`).join('');
         return `<div class="rp-group">
           <div class="rp-pos">${escHtml(pos)} <span class="rp-pos-n">${groups[pos].length}</span></div>
@@ -3019,6 +3050,7 @@
 
   async function main() {
     try {
+      loadNflPlayers(); // warm the full player-name cache in the background
       const chain = await getLeagueChain(ROOT_LEAGUE_ID);
       const loadingEl = document.getElementById('loading');
       const seasonsEl = document.getElementById('seasons');
