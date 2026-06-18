@@ -239,6 +239,59 @@
       .rec-val { font-size: 1.05rem; }
     }
 
+    /* ── ALL-TIME RECORDS ── */
+    #all-time { max-width: 1100px; margin: 0 auto; padding: 60px 20px 0; }
+    #all-time-body { margin-top: 26px; }
+    .stat-cards {
+      display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+      margin-bottom: 22px;
+    }
+    .stat-card {
+      flex: 1 1 180px; max-width: 240px; min-width: 0;
+      background: linear-gradient(160deg, #2a1208 0%, #190b03 100%);
+      border: 2px solid var(--wood-highlight);
+      border-radius: 4px;
+      padding: 14px 14px 12px;
+      box-shadow: 0 0 0 1px #3a1a08, 0 4px 14px rgba(0,0,0,0.5);
+    }
+    .stat-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+    .stat-emoji { font-size: 1.1rem; }
+    .stat-lbl {
+      font-family: var(--font-display); font-size: 0.6rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .stat-big {
+      font-family: var(--font-display); font-weight: 700; font-size: 1.5rem;
+      color: var(--gold); line-height: 1.1; text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .stat-d1 {
+      font-family: var(--font-body); font-size: 0.82rem; color: #f0e8d8; margin-top: 5px;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .stat-d2 {
+      font-family: var(--font-body); font-style: italic; font-size: 0.74rem; color: var(--muted); margin-top: 2px;
+      overflow-wrap: anywhere; word-break: break-word;
+    }
+    .st-rank {
+      font-family: var(--font-display); font-weight: 700; font-size: 0.78rem;
+      color: var(--muted); width: 1.4em; flex-shrink: 0; text-align: right;
+    }
+    @media (max-width: 600px) {
+      #all-time { padding: 40px 12px 0; }
+      .stat-cards { gap: 8px; }
+      .stat-card { flex: 1 1 calc(50% - 8px); max-width: none; padding: 11px 10px 10px; }
+      .stat-big { font-size: 1.25rem; }
+      /* standings uses fixed layout on mobile; keep numeric cols compact so the
+         manager column has room, and never wrap the numbers */
+      .st-table col:nth-child(2),
+      .st-table col:nth-child(3),
+      .st-table col:nth-child(4),
+      .st-table col:nth-child(5) { width: 14%; }
+      .st-table td.tc-count { white-space: nowrap; font-size: 0.8rem; }
+      .st-table thead th { padding: 10px 2px; }
+      .st-rank { width: 1.1em; }
+    }
+
     /* The physical cabinet wrapper */
     .tc-cabinet {
       position: relative;
@@ -423,7 +476,7 @@
 
     /* Smooth anchor scrolling with offset so headings aren't flush to the top */
     html { scroll-behavior: smooth; }
-    #season-preview, #trophy-case, #past-seasons { scroll-margin-top: 64px; }
+    #season-preview, #trophy-case, #all-time, #past-seasons { scroll-margin-top: 64px; }
 
     .season-card {
       background:
@@ -1356,6 +1409,7 @@
   <nav class="mn-links">
     <a class="navlink" href="#season-preview">Preview</a>
     <a class="navlink" href="#trophy-case">Trophy</a>
+    <a class="navlink" href="#all-time">Records</a>
     <a class="navlink" href="#past-seasons">Seasons</a>
     <button id="share-btn" class="mn-share" title="Copy link" aria-label="Copy link to this page">🔗</button>
   </nav>
@@ -1370,6 +1424,7 @@
   <nav class="topnav">
     <a class="navlink" href="#season-preview">Season Preview</a>
     <a class="navlink" href="#trophy-case">Trophy Case</a>
+    <a class="navlink" href="#all-time">Records</a>
     <a class="navlink" href="#past-seasons">Past Seasons</a>
   </nav>
 </div>
@@ -1382,6 +1437,12 @@
 <div id="season-preview" style="display:none;"></div>
 
 <div id="trophy-case" style="display:none;"></div>
+
+<section id="all-time" style="display:none;">
+  <div class="section-title">📊 All-Time Records</div>
+  <div class="section-sub">Regular-season results across the dynasty</div>
+  <div id="all-time-body"></div>
+</section>
 
 <section id="past-seasons" style="display:none;">
   <div class="section-title">📜 Past Seasons</div>
@@ -1893,6 +1954,173 @@
     });
 
     return wrap;
+  }
+
+  // Aggregate regular-season matchups across seasons into standings + record highlights
+  function computeRecords(perSeason) {
+    const standings = {};
+    const ensure = m => standings[m] || (standings[m] = { manager: m, w: 0, l: 0, t: 0, pf: 0, games: 0 });
+    let blowout = null, highest = null, closest = null;
+    const h2h = {};
+    perSeason.forEach(se => {
+      se.weeks.forEach((mw, wi) => {
+        const week = wi + 1;
+        const byId = {};
+        (mw || []).forEach(e => {
+          if (e.matchup_id == null || e.points == null) return;
+          (byId[e.matchup_id] = byId[e.matchup_id] || []).push(e);
+        });
+        Object.values(byId).forEach(pair => {
+          if (pair.length !== 2) return;
+          const [x, y] = pair;
+          const mx = se.mgrByRoster[x.roster_id], my = se.mgrByRoster[y.roster_id];
+          if (!mx || !my) return;
+          const px = x.points, py = y.points;
+          ensure(mx); ensure(my);
+          standings[mx].pf += px; standings[my].pf += py;
+          standings[mx].games++; standings[my].games++;
+          [[mx, px], [my, py]].forEach(([m, p]) => {
+            if (!highest || p > highest.pts) highest = { season: se.season, week, manager: m, pts: p };
+          });
+          if (px === py) { standings[mx].t++; standings[my].t++; return; }
+          const margin = Math.abs(px - py);
+          const winM = px > py ? mx : my, loseM = px > py ? my : mx;
+          const winP = Math.max(px, py), loseP = Math.min(px, py);
+          standings[winM].w++; standings[loseM].l++;
+          if (!blowout || margin > blowout.margin) blowout = { season: se.season, week, winner: winM, loser: loseM, ws: winP, ls: loseP, margin };
+          if (!closest || margin < closest.margin) closest = { season: se.season, week, winner: winM, loser: loseM, ws: winP, ls: loseP, margin };
+          const a = winM < loseM ? winM : loseM, b = winM < loseM ? loseM : winM;
+          const key = a + '|' + b;
+          const rec = h2h[key] || (h2h[key] = { a, b, aw: 0, bw: 0, games: 0 });
+          rec.games++; if (winM === a) rec.aw++; else rec.bw++;
+        });
+      });
+    });
+    const standingsArr = Object.values(standings).filter(r => r.games > 0);
+    standingsArr.forEach(r => { r.pct = (r.w + 0.5 * r.t) / r.games; r.ppg = r.pf / r.games; });
+    standingsArr.sort((a, b) => b.pct - a.pct || b.pf - a.pf);
+    const rivals = Object.values(h2h);
+    const rivalry = rivals.length
+      ? rivals.reduce((best, r) => (r.games > best.games || (r.games === best.games && Math.abs(r.aw - r.bw) > Math.abs(best.aw - best.bw))) ? r : best, rivals[0])
+      : null;
+    return { standings: standingsArr, blowout, highest, closest, rivalry };
+  }
+
+  async function renderRecords(seasons) {
+    const section = document.getElementById('all-time');
+    const completed = seasons.filter(s => s.league.status === 'complete');
+    if (!completed.length) return;
+
+    const mgrAvatar = {};
+    const perSeason = [];
+    for (const { league } of completed) {
+      try {
+        const rosters = await fetchJSON(`${API}/league/${league.league_id}/rosters`);
+        const ownerToMgr = {};
+        (league._users || []).forEach(u => {
+          const m = canonical(u.display_name || '?');
+          ownerToMgr[u.user_id] = m;
+          const av = avatarUrl(u);
+          if (av && !mgrAvatar[m]) mgrAvatar[m] = av;
+        });
+        const mgrByRoster = {};
+        rosters.forEach(r => { mgrByRoster[r.roster_id] = ownerToMgr[r.owner_id] || ('Roster ' + r.roster_id); });
+        const startPlayoffs = (league.settings && league.settings.playoff_week_start) || 15;
+        const lastWeek = Math.max(1, Math.min(18, startPlayoffs - 1));
+        const weeks = await Promise.all(
+          Array.from({ length: lastWeek }, (_, i) => fetchJSON(`${API}/league/${league.league_id}/matchups/${i + 1}`).catch(() => []))
+        );
+        perSeason.push({ season: league.season, mgrByRoster, weeks });
+      } catch (e) { /* skip this season */ }
+    }
+    const stats = computeRecords(perSeason);
+    if (!stats.standings.length) return;
+
+    const pts = n => n.toFixed(1);
+    const pctFmt = p => (p === 1 ? '1.000' : p.toFixed(3).replace(/^0/, ''));
+    const cards = [];
+    if (stats.blowout) cards.push({ emoji: '💥', lbl: 'Biggest Blowout', big: '+' + pts(stats.blowout.margin),
+      d1: `@${stats.blowout.winner} over @${stats.blowout.loser}`, d2: `${pts(stats.blowout.ws)}–${pts(stats.blowout.ls)} · ${stats.blowout.season} Wk ${stats.blowout.week}` });
+    if (stats.highest) cards.push({ emoji: '🔥', lbl: 'Highest Score', big: pts(stats.highest.pts),
+      d1: `@${stats.highest.manager}`, d2: `${stats.highest.season} Wk ${stats.highest.week}` });
+    if (stats.closest) cards.push({ emoji: '😬', lbl: 'Closest Game', big: '+' + pts(stats.closest.margin),
+      d1: `@${stats.closest.winner} over @${stats.closest.loser}`, d2: `${pts(stats.closest.ws)}–${pts(stats.closest.ls)} · ${stats.closest.season} Wk ${stats.closest.week}` });
+    if (stats.rivalry && stats.rivalry.games >= 2) {
+      const r = stats.rivalry;
+      const lead = r.aw === r.bw ? `dead even ${r.aw}–${r.bw}` : (r.aw > r.bw ? `@${r.a} leads ${r.aw}–${r.bw}` : `@${r.b} leads ${r.bw}–${r.aw}`);
+      cards.push({ emoji: '⚔️', lbl: 'Top Rivalry', big: r.games + ' mtgs', d1: `@${r.a} vs @${r.b}`, d2: lead });
+    }
+    const cardsHtml = cards.map(c => `
+      <div class="stat-card">
+        <div class="stat-top"><span class="stat-emoji">${c.emoji}</span><span class="stat-lbl">${escHtml(c.lbl)}</span></div>
+        <div class="stat-big">${escHtml(c.big)}</div>
+        <div class="stat-d1">${escHtml(c.d1)}</div>
+        <div class="stat-d2">${escHtml(c.d2)}</div>
+      </div>`).join('');
+
+    const rows = stats.standings.map((r, i) => {
+      const rec = r.w + '-' + r.l + (r.t ? '-' + r.t : '');
+      const av = avatarHtml({ avatar: mgrAvatar[r.manager], teamName: r.manager }, 'tc-avatar');
+      return `
+        <tr>
+          <td><div class="tc-manager"><span class="st-rank">${i + 1}</span>${av}<span>@${escHtml(r.manager)}</span></div></td>
+          <td class="tc-count" data-label="Record">${rec}</td>
+          <td class="tc-count" data-label="Win%">${pctFmt(r.pct)}</td>
+          <td class="tc-count" data-label="PF">${Math.round(r.pf)}</td>
+          <td class="tc-count" data-label="PPG">${pts(r.ppg)}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('all-time-body').innerHTML = `
+      ${cards.length ? `<div class="stat-cards">${cardsHtml}</div>` : ''}
+      <div class="tc-cabinet">
+        <div class="tc-interior">
+          <table class="tc-table st-table">
+            <colgroup><col class="col-mgr"/><col/><col/><col/><col/></colgroup>
+            <thead>
+              <tr>
+                <th class="tc-sortable" data-key="name">Manager<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="w">Record<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="pct">Win%<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="pf">PF<span class="sort-ind"></span></th>
+                <th class="num tc-sortable" data-key="ppg">PPG<span class="sort-ind"></span></th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+
+    // Sortable standings (numeric desc by default; manager asc)
+    const table = document.querySelector('#all-time .st-table');
+    const tbody = table.querySelector('tbody');
+    const ths = [...table.querySelectorAll('th.tc-sortable')];
+    let st = { key: 'pct', asc: false };
+    const val = (tr, idx, key) => {
+      const c = tr.children[idx];
+      if (key === 'name') return c.textContent.replace(/^\d+/, '').trim().toLowerCase();
+      const m = c.textContent.match(/-?\d+(\.\d+)?/);
+      return m ? parseFloat(m[0]) : 0;
+    };
+    const sortBy = key => {
+      const idx = ths.findIndex(t => t.dataset.key === key);
+      const asc = st.key === key ? !st.asc : (key === 'name');
+      st = { key, asc };
+      [...tbody.querySelectorAll('tr')].sort((a, b) => {
+        const va = val(a, idx, key), vb = val(b, idx, key);
+        return (va < vb ? -1 : va > vb ? 1 : 0) * (asc ? 1 : -1);
+      }).forEach(r => tbody.appendChild(r));
+      // renumber rank column to reflect new order
+      [...tbody.querySelectorAll('tr .st-rank')].forEach((s, i) => s.textContent = i + 1);
+      ths.forEach(t => { t.querySelector('.sort-ind').textContent = t.dataset.key === key ? (asc ? ' ▲' : ' ▼') : ''; });
+    };
+    ths.forEach(t => {
+      t.tabIndex = 0; t.setAttribute('role', 'button');
+      t.addEventListener('click', () => sortBy(t.dataset.key));
+      t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(t.dataset.key); } });
+    });
+
+    section.style.display = 'block';
   }
 
   async function renderSeasonPreview(currentLeague, lastPodium, history = {}) {
@@ -2517,6 +2745,9 @@
         trophyEl.style.display = 'block';
       }
 
+      // All-time regular-season records (pulls weekly matchups; best-effort)
+      renderRecords(seasons).catch(e => console.warn('Records failed:', e));
+
       // Per-manager success history (titles + podiums) for the preview's pedigree logic
       const history = {};
       seasons.forEach(({ podium }) => {
@@ -2559,7 +2790,7 @@
         }
       });
     }, { rootMargin: '-20% 0px -70% 0px' });
-    ['season-preview', 'trophy-case', 'past-seasons'].forEach(id => {
+    ['season-preview', 'trophy-case', 'all-time', 'past-seasons'].forEach(id => {
       const el = document.getElementById(id);
       if (el) obs.observe(el);
     });
