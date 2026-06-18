@@ -1048,7 +1048,7 @@
     .roster-overlay {
       position: fixed;
       inset: 0;
-      z-index: 1000;
+      z-index: 1400; /* above mini-nav (1100), progress bar (1200), toast/confetti (1300) */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1069,30 +1069,43 @@
       width: 100%;
       max-width: 440px;
       max-height: 86vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; /* dialog itself never scrolls — only .ro-content does */
       background:
         repeating-linear-gradient(91deg, transparent 0px, transparent 4px, rgba(92,45,16,0.06) 4px, rgba(92,45,16,0.06) 5px),
         linear-gradient(160deg, #2a1208 0%, #190b03 100%);
       border: 3px solid var(--wood-highlight);
       border-radius: 6px;
       box-shadow: 0 0 0 1px #3a1a08, 0 20px 60px rgba(0,0,0,0.75);
-      padding: 22px 22px 20px;
       animation: ro-pop 0.18s ease;
+    }
+    .ro-content {
+      min-height: 0; /* allow the flex child to shrink so it (not the dialog) scrolls */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 22px 22px 20px;
     }
     @keyframes ro-fade { from { opacity: 0; } }
     @keyframes ro-pop { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
     .ro-close {
       position: absolute;
-      top: 6px; right: 10px;
-      background: none; border: none;
-      color: var(--muted);
-      font-size: 1.7rem; line-height: 1;
-      cursor: pointer; padding: 4px 8px;
+      top: 8px; right: 8px;
+      z-index: 3; /* always above the scrolling content */
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(20,9,2,0.88);
+      border: 1px solid var(--wood-highlight);
+      color: var(--gold);
+      border-radius: 50%;
+      font-size: 1.4rem; line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.55);
       font-family: var(--font-body);
+      transition: color 0.15s, border-color 0.15s;
     }
-    .ro-close:hover { color: var(--gold); }
-    .ro-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-right: 28px; }
+    .ro-close:hover { color: var(--gold-light); border-color: #a06030; }
+    .ro-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-right: 38px; }
     .ro-avatar {
       width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
       background: var(--surface2); border: 2px solid #5c2d10; flex-shrink: 0;
