@@ -1164,22 +1164,31 @@
     .bx-name { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; color: #f8f0e0; overflow-wrap: anywhere; }
     .bx-total { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; color: var(--gold); margin-top: 2px; }
     .bx-vs { font-family: var(--font-body); font-style: italic; font-size: 0.7rem; color: var(--muted); text-align: center; line-height: 1.25; }
-    .bx-rows { display: flex; flex-direction: column; }
+    .bx-rows, .lx-rows { display: flex; flex-direction: column; }
+    /* Symmetric 5-column grid: name | pts | SLOT | pts | name — pts columns align */
     .bx-row {
-      display: grid; grid-template-columns: 1fr 2.6em 1fr; align-items: center; gap: 6px;
+      display: grid; grid-template-columns: 1fr 2.9em 2.8em 2.9em 1fr; align-items: center; gap: 6px;
       padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
     }
     .bx-row:last-child { border-bottom: none; }
-    .bx-side { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-    .bx-w { justify-content: flex-start; }
-    .bx-l { justify-content: flex-end; text-align: right; }
     .bx-pl { font-family: var(--font-body); font-size: 0.8rem; color: #e8dcc4; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
-    .bx-pts { font-family: var(--font-display); font-weight: 700; font-size: 0.82rem; color: #f0e8d8; flex-shrink: 0; }
+    .bx-pl-w { text-align: right; }
+    .bx-pl-l { text-align: left; }
+    .bx-pts { font-family: var(--font-display); font-weight: 700; font-size: 0.82rem; color: #f0e8d8; text-align: center; white-space: nowrap; }
     .bx-slot {
       font-family: var(--font-display); font-size: 0.58rem; letter-spacing: 0.04em;
       color: var(--muted); text-align: center; background: rgba(0,0,0,0.3);
       border-radius: 3px; padding: 3px 0;
     }
+
+    /* Single-team lineup (highest scores): SLOT | player | pts */
+    .lx-head { text-align: center; padding-bottom: 12px; margin-bottom: 8px; border-bottom: 1px solid rgba(92,45,16,0.6); }
+    .lx-row {
+      display: grid; grid-template-columns: 2.8em 1fr auto; align-items: center; gap: 10px;
+      padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .lx-row:last-child { border-bottom: none; }
+    .lx-pl { font-family: var(--font-body); font-size: 0.84rem; color: #e8dcc4; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 
     /* Rivalry history */
     .hist-sub { text-align: center; font-family: var(--font-body); font-style: italic; font-size: 0.78rem; color: var(--gold-light); margin-bottom: 10px; }
@@ -2101,8 +2110,8 @@
           ensure(mx); ensure(my);
           standings[mx].pf += px; standings[my].pf += py;
           standings[mx].games++; standings[my].games++;
-          perfList.push({ season: se.season, week, manager: mx, pts: px });
-          perfList.push({ season: se.season, week, manager: my, pts: py });
+          perfList.push({ season: se.season, week, manager: mx, pts: px, entry: x, slots: se.slots });
+          perfList.push({ season: se.season, week, manager: my, pts: py, entry: y, slots: se.slots });
           if (px === py) { standings[mx].t++; standings[my].t++; return; }
           const margin = Math.abs(px - py);
           const winM = px > py ? mx : my, loseM = px > py ? my : mx;
@@ -2279,7 +2288,7 @@
       </div>`;
     const statListHtml = type => {
       const L = (stats.lists && stats.lists[type]) || [];
-      if (type === 'highest') return L.map((e, i) => slRow(i + 1, `@${escHtml(e.manager)}`, `${escHtml(e.season)} · Wk ${e.week}`, pts(e.pts))).join('');
+      if (type === 'highest') return L.map((e, i) => slRow(i + 1, `@${escHtml(e.manager)}`, `${escHtml(e.season)} · Wk ${e.week}`, pts(e.pts), i)).join('');
       if (type === 'rivalry') return L.map((e, i) => {
         const lead = e.aw === e.bw ? `even ${e.aw}–${e.bw}` : (e.aw > e.bw ? `@${escHtml(e.a)} ${e.aw}–${e.bw}` : `@${escHtml(e.b)} ${e.bw}–${e.aw}`);
         return slRow(i + 1, `@${escHtml(e.a)} vs @${escHtml(e.b)}`, `${e.games} meetings`, lead, i);
@@ -2294,11 +2303,12 @@
       for (let i = 0; i < n; i++) {
         const slot = slots[i] || 'FLEX';
         const wId = g.we.starters && g.we.starters[i], lId = g.le.starters && g.le.starters[i];
-        const wp = slotPts(g.we, i), lp = slotPts(g.le, i);
         rows += `<div class="bx-row">
-            <div class="bx-side bx-w"><span class="bx-pl">${escHtml(pname(wId))}</span><span class="bx-pts">${pts(wp)}</span></div>
-            <div class="bx-slot">${escHtml(slotName(slot))}</div>
-            <div class="bx-side bx-l"><span class="bx-pts">${pts(lp)}</span><span class="bx-pl">${escHtml(pname(lId))}</span></div>
+            <span class="bx-pl bx-pl-w">${escHtml(pname(wId))}</span>
+            <span class="bx-pts">${pts(slotPts(g.we, i))}</span>
+            <span class="bx-slot">${escHtml(slotName(slot))}</span>
+            <span class="bx-pts">${pts(slotPts(g.le, i))}</span>
+            <span class="bx-pl bx-pl-l">${escHtml(pname(lId))}</span>
           </div>`;
       }
       return `
@@ -2309,6 +2319,29 @@
           <div class="bx-team"><div class="bx-name">@${escHtml(g.loser)}</div><div class="bx-total">${pts(g.ls)}</div></div>
         </div>
         <div class="bx-rows">${rows}</div>`;
+    };
+    const lineupHtml = e => {
+      const slots = e.slots || [];
+      const st = e.entry || {};
+      const n = Math.max(slots.length, (st.starters || []).length);
+      let rows = '';
+      for (let i = 0; i < n; i++) {
+        const slot = slots[i] || 'FLEX';
+        const id = st.starters && st.starters[i];
+        rows += `<div class="lx-row">
+            <span class="bx-slot">${escHtml(slotName(slot))}</span>
+            <span class="lx-pl">${escHtml(pname(id))}</span>
+            <span class="bx-pts">${pts(slotPts(st, i))}</span>
+          </div>`;
+      }
+      return `
+        <button class="sl-back" data-back>‹ Back</button>
+        <div class="lx-head">
+          <div class="bx-name">@${escHtml(e.manager)}</div>
+          <div class="bx-total">${pts(e.pts)}</div>
+          <div class="bx-vs">${escHtml(e.season)} · Wk ${e.week}</div>
+        </div>
+        <div class="lx-rows">${rows}</div>`;
     };
     const rivalryHtml = pair => {
       const a = pair.a, b = pair.b;
@@ -2356,6 +2389,7 @@
     function showList(type) { setContent(`<div class="sl-head">${STAT_TITLE[type] || ''}</div><div class="sl-list">${statListHtml(type)}</div>`); }
     function showDetail(type, idx) {
       if (type === 'rivalry') { const p = stats.lists.rivalry[idx]; if (p) setContent(rivalryHtml(p)); }
+      else if (type === 'highest') { const e = stats.lists.highest[idx]; if (e) setContent(lineupHtml(e)); }
       else { const g = stats.lists[type][idx]; if (g) setContent(boxScoreHtml(g)); }
     }
     function openStat(type) {
