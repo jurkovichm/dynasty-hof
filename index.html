@@ -1437,9 +1437,37 @@
       will-change: transform, opacity;
     }
 
+    /* Hero ember particles (added by JS; reduced-motion users get none) */
+    .hero .trophy-icon, .hero h1, .hero .subtitle { position: relative; z-index: 1; }
+    .hero-embers { position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+    .ember {
+      position: absolute;
+      bottom: -12px;
+      left: var(--x);
+      width: var(--sz); height: var(--sz);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,224,140,0.95) 0%, rgba(245,200,66,0) 70%);
+      animation: ember-rise var(--dur) linear infinite;
+      animation-delay: var(--delay);
+      will-change: transform, opacity;
+    }
+    @keyframes ember-rise {
+      0%   { transform: translate(0, 0); opacity: 0; }
+      12%  { opacity: var(--maxop, 0.7); }
+      88%  { opacity: var(--maxop, 0.7); }
+      100% { transform: translate(var(--drift), calc(-1 * var(--rise))); opacity: 0; }
+    }
+
+    /* Champion podium spotlight — gentle pulsing glow */
+    .place-1 .place-card { animation: champ-glow 3.4s ease-in-out infinite; }
+    @keyframes champ-glow {
+      0%, 100% { box-shadow: 0 0 0 1px #7a5c10, 0 6px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,220,100,0.2), inset 0 0 20px rgba(245,200,66,0.06), 0 0 16px rgba(245,200,66,0.12); }
+      50%      { box-shadow: 0 0 0 1px #7a5c10, 0 6px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,220,100,0.2), inset 0 0 20px rgba(245,200,66,0.10), 0 0 32px rgba(245,200,66,0.38); }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .reveal-ready .reveal { opacity: 1 !important; transform: none !important; }
-      .lombardi, .trophy-icon { animation: none !important; }
+      .lombardi, .trophy-icon, .ember, .place-1 .place-card { animation: none !important; }
     }
   </style>
 </head>
@@ -3018,6 +3046,26 @@
         burst(e.clientX || window.innerWidth / 2, e.clientY || 80);
       }
     });
+
+    // Floating ember particles drifting up through the hero (reuses `hero` above)
+    if (hero && !reduceMotion) {
+      const layer = document.createElement('div');
+      layer.className = 'hero-embers';
+      const rnd = (a, b) => a + Math.random() * (b - a);
+      for (let i = 0; i < 16; i++) {
+        const e = document.createElement('span');
+        e.className = 'ember';
+        e.style.setProperty('--x', rnd(0, 100).toFixed(1) + '%');
+        e.style.setProperty('--sz', rnd(2, 6).toFixed(1) + 'px');
+        e.style.setProperty('--dur', rnd(6, 13).toFixed(1) + 's');
+        e.style.setProperty('--delay', (-rnd(0, 12)).toFixed(1) + 's');
+        e.style.setProperty('--rise', rnd(140, 300).toFixed(0) + 'px');
+        e.style.setProperty('--drift', rnd(-30, 30).toFixed(0) + 'px');
+        e.style.setProperty('--maxop', rnd(0.35, 0.85).toFixed(2));
+        layer.appendChild(e);
+      }
+      hero.appendChild(layer);
+    }
   })();
 </script>
 </body>
