@@ -196,7 +196,47 @@
       font-family: var(--font-body);
       font-style: italic;
       font-size: 0.9rem;
-      margin-bottom: 28px;
+      margin-bottom: 22px;
+    }
+
+    /* Records & superlatives strip */
+    .tc-records {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 0 auto 24px;
+      max-width: 760px;
+    }
+    .rec {
+      flex: 1 1 130px;
+      max-width: 180px;
+      min-width: 0;
+      background: linear-gradient(160deg, #2a1208 0%, #190b03 100%);
+      border: 2px solid var(--wood-highlight);
+      border-radius: 4px;
+      padding: 10px 12px;
+      text-align: center;
+      box-shadow: 0 0 0 1px #3a1a08, 0 4px 14px rgba(0,0,0,0.5);
+    }
+    .rec-top { display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .rec-emoji { font-size: 1.1rem; }
+    .rec-val {
+      font-family: var(--font-display); font-weight: 700; font-size: 1.2rem;
+      color: var(--gold); text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    .rec-lbl {
+      font-family: var(--font-display); font-size: 0.56rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted); margin-top: 3px;
+    }
+    .rec-who {
+      font-family: var(--font-body); font-size: 0.74rem; color: #d8c8a8;
+      margin-top: 3px; overflow-wrap: anywhere; word-break: break-word;
+    }
+    @media (max-width: 600px) {
+      .tc-records { gap: 8px; padding: 0 4px; }
+      .rec { flex: 1 1 calc(50% - 8px); max-width: none; padding: 8px; }
+      .rec-val { font-size: 1.05rem; }
     }
 
     /* The physical cabinet wrapper */
@@ -1544,10 +1584,35 @@
 
     const body = haveRows.join('') + cobwebRow;
 
+    // Records & superlatives — computed from the same tally
+    const leaderBy = scoreFn => allRows.reduce((best, r) => scoreFn(r) > scoreFn(best) ? r : best, allRows[0]);
+    const records = [];
+    const titleK = leaderBy(r => r.g);
+    if (titleK && titleK.g > 0) records.push({ emoji: '👑', val: titleK.g, lbl: titleK.g === 1 ? 'Title' : 'Titles', who: titleK.manager });
+    const hwK = leaderBy(r => r.g + r.s + r.b);
+    if (hwK && (hwK.g + hwK.s + hwK.b) > 0) records.push({ emoji: '🏅', val: hwK.g + hwK.s + hwK.b, lbl: 'Podiums', who: hwK.manager });
+    const cashK = leaderBy(r => profit(r));
+    if (cashK) records.push({ emoji: '💰', val: fmtProfit(profit(cashK)), lbl: 'Most Cash', who: cashK.manager });
+    const cursedPool = allRows.filter(r => r.g === 0 && r.seasons > 0);
+    if (cursedPool.length) {
+      const cursed = cursedPool.reduce((a, b) => b.seasons > a.seasons ? b : a, cursedPool[0]);
+      records.push({ emoji: '🕸️', val: cursed.seasons, lbl: cursed.seasons === 1 ? 'Yr No Ring' : 'Yrs No Ring', who: cursed.manager });
+    }
+    const recordsHtml = records.length ? `
+      <div class="tc-records">
+        ${records.map(r => `
+          <div class="rec">
+            <div class="rec-top"><span class="rec-emoji">${r.emoji}</span><span class="rec-val">${escHtml(String(r.val))}</span></div>
+            <div class="rec-lbl">${escHtml(r.lbl)}</div>
+            <div class="rec-who">@${escHtml(r.who)}</div>
+          </div>`).join('')}
+      </div>` : '';
+
     const wrap = document.createElement('div');
     wrap.innerHTML = `
       <div class="tc-title">🏛️ Trophy Case</div>
       <div class="tc-sub">All-Time Podium Finishes · ${completedCount} Season${completedCount === 1 ? '' : 's'}</div>
+      ${recordsHtml}
       <div class="tc-cabinet">
         <div class="tc-interior">
           <table class="tc-table">
