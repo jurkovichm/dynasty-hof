@@ -1142,6 +1142,56 @@
       font-family: var(--font-display); font-weight: 700; font-size: 0.95rem;
       color: var(--gold); flex-shrink: 0; white-space: nowrap;
     }
+    .sl-row.tappable { cursor: pointer; border-radius: 4px; transition: background 0.12s; }
+    .sl-row.tappable:hover { background: rgba(245,200,66,0.06); }
+    .sl-go { color: var(--muted); font-size: 1rem; flex-shrink: 0; margin-left: 2px; }
+    .sl-row.tappable:hover .sl-go { color: var(--gold); }
+
+    /* Back button (detail views) */
+    .sl-back {
+      background: none; border: none; color: var(--muted);
+      font-family: var(--font-display); font-size: 0.78rem; letter-spacing: 0.04em;
+      cursor: pointer; padding: 2px 4px 8px; margin: 0 0 4px;
+    }
+    .sl-back:hover { color: var(--gold); }
+
+    /* Box score (head-to-head player scores) */
+    .bx-head {
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
+      padding-bottom: 12px; margin-bottom: 8px; border-bottom: 1px solid rgba(92,45,16,0.6);
+    }
+    .bx-team { text-align: center; min-width: 0; }
+    .bx-name { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; color: #f8f0e0; overflow-wrap: anywhere; }
+    .bx-total { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; color: var(--gold); margin-top: 2px; }
+    .bx-vs { font-family: var(--font-body); font-style: italic; font-size: 0.7rem; color: var(--muted); text-align: center; line-height: 1.25; }
+    .bx-rows { display: flex; flex-direction: column; }
+    .bx-row {
+      display: grid; grid-template-columns: 1fr 2.6em 1fr; align-items: center; gap: 6px;
+      padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .bx-row:last-child { border-bottom: none; }
+    .bx-side { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+    .bx-w { justify-content: flex-start; }
+    .bx-l { justify-content: flex-end; text-align: right; }
+    .bx-pl { font-family: var(--font-body); font-size: 0.8rem; color: #e8dcc4; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+    .bx-pts { font-family: var(--font-display); font-weight: 700; font-size: 0.82rem; color: #f0e8d8; flex-shrink: 0; }
+    .bx-slot {
+      font-family: var(--font-display); font-size: 0.58rem; letter-spacing: 0.04em;
+      color: var(--muted); text-align: center; background: rgba(0,0,0,0.3);
+      border-radius: 3px; padding: 3px 0;
+    }
+
+    /* Rivalry history */
+    .hist-sub { text-align: center; font-family: var(--font-body); font-style: italic; font-size: 0.78rem; color: var(--gold-light); margin-bottom: 10px; }
+    .hist-list { display: flex; flex-direction: column; }
+    .hist-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 8px 2px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-when { font-family: var(--font-body); font-size: 0.8rem; color: var(--muted); }
+    .hist-score { font-family: var(--font-display); font-size: 0.95rem; color: #c8b89a; white-space: nowrap; }
+    .hist-score .hist-win { color: var(--gold); }
 
     /* Manager profile modal */
     .tc-row { cursor: pointer; }
@@ -2058,7 +2108,9 @@
           const winM = px > py ? mx : my, loseM = px > py ? my : mx;
           const winP = Math.max(px, py), loseP = Math.min(px, py);
           standings[winM].w++; standings[loseM].l++;
-          gameList.push({ season: se.season, week, winner: winM, loser: loseM, ws: winP, ls: loseP, margin });
+          const we = px > py ? x : y, le = px > py ? y : x;
+          gameList.push({ season: se.season, week, winner: winM, loser: loseM, ws: winP, ls: loseP, margin,
+            slots: se.slots, we, le });
           const a = winM < loseM ? winM : loseM, b = winM < loseM ? loseM : winM;
           const key = a + '|' + b;
           const rec = h2h[key] || (h2h[key] = { a, b, aw: 0, bw: 0, games: 0 });
@@ -2086,6 +2138,7 @@
         closest: byMarginAsc.slice(0, 10),
         rivalry: rivalries.slice(0, 10),
       },
+      allGames: gameList,
     };
   }
 
@@ -2095,6 +2148,8 @@
     if (!completed.length) return;
 
     const mgrAvatar = {};
+    let playerMap = {};
+    try { playerMap = await fetchJSON('rostered-players.json'); } catch (e) { /* names best-effort */ }
     const perSeason = [];
     for (const { league } of completed) {
       try {
@@ -2113,7 +2168,8 @@
         const weeks = await Promise.all(
           Array.from({ length: lastWeek }, (_, i) => fetchJSON(`${API}/league/${league.league_id}/matchups/${i + 1}`).catch(() => []))
         );
-        perSeason.push({ season: league.season, mgrByRoster, weeks });
+        const slots = (league.roster_positions || []).filter(s => !['BN', 'IR', 'TAXI'].includes(s));
+        perSeason.push({ season: league.season, mgrByRoster, weeks, slots });
       } catch (e) { /* skip this season */ }
     }
     const stats = computeRecords(perSeason);
@@ -2203,23 +2259,80 @@
       t.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(t.dataset.key); } });
     });
 
-    // ── Tap a highlight card → modal with the full top-10 list ──
+    // ── Tap a highlight card → top-10 list; tap a game/rivalry row → detail ──
     const STAT_TITLE = { blowout: '💥 Biggest Blowouts', highest: '🔥 Highest Scores', closest: '😬 Closest Games', rivalry: '⚔️ Top Rivalries' };
-    const slRow = (rank, primary, secondary, val) => `
-      <div class="sl-row">
+    const SLOT_LABEL = { QB: 'QB', RB: 'RB', WR: 'WR', TE: 'TE', K: 'K', DEF: 'DEF', FLEX: 'FLEX', SUPER_FLEX: 'SF', REC_FLEX: 'W/T', WRRB_FLEX: 'W/R', WRRB_WRT_FLEX: 'FLEX', IDP_FLEX: 'IDP' };
+    const slotName = s => SLOT_LABEL[s] || s;
+    const pname = id => (id && id !== '0') ? ((playerMap[id] && playerMap[id].n) || 'Player') : '—';
+    const slotPts = (entry, i) => {
+      if (entry.starters_points && entry.starters_points[i] != null) return entry.starters_points[i];
+      const sid = entry.starters && entry.starters[i];
+      if (entry.players_points && sid != null && entry.players_points[sid] != null) return entry.players_points[sid];
+      return 0;
+    };
+    const slRow = (rank, primary, secondary, value, idx) => `
+      <div class="sl-row${idx != null ? ' tappable' : ''}"${idx != null ? ` data-idx="${idx}" role="button" tabindex="0"` : ''}>
         <span class="sl-rank">${rank}</span>
         <div class="sl-main"><div class="sl-1">${primary}</div><div class="sl-2">${secondary}</div></div>
-        <span class="sl-val">${val}</span>
+        <span class="sl-val">${value}</span>
+        ${idx != null ? '<span class="sl-go">›</span>' : ''}
       </div>`;
-    const statRows = type => {
+    const statListHtml = type => {
       const L = (stats.lists && stats.lists[type]) || [];
       if (type === 'highest') return L.map((e, i) => slRow(i + 1, `@${escHtml(e.manager)}`, `${escHtml(e.season)} · Wk ${e.week}`, pts(e.pts))).join('');
       if (type === 'rivalry') return L.map((e, i) => {
         const lead = e.aw === e.bw ? `even ${e.aw}–${e.bw}` : (e.aw > e.bw ? `@${escHtml(e.a)} ${e.aw}–${e.bw}` : `@${escHtml(e.b)} ${e.bw}–${e.aw}`);
-        return slRow(i + 1, `@${escHtml(e.a)} vs @${escHtml(e.b)}`, `${e.games} meetings`, lead);
+        return slRow(i + 1, `@${escHtml(e.a)} vs @${escHtml(e.b)}`, `${e.games} meetings`, lead, i);
       }).join('');
       return L.map((e, i) => slRow(i + 1, `@${escHtml(e.winner)} over @${escHtml(e.loser)}`,
-        `${escHtml(e.season)} · Wk ${e.week} · ${pts(e.ws)}–${pts(e.ls)}`, '+' + pts(e.margin))).join('');
+        `${escHtml(e.season)} · Wk ${e.week} · ${pts(e.ws)}–${pts(e.ls)}`, '+' + pts(e.margin), i)).join('');
+    };
+    const boxScoreHtml = g => {
+      const slots = g.slots || [];
+      const n = Math.max(slots.length, (g.we.starters || []).length, (g.le.starters || []).length);
+      let rows = '';
+      for (let i = 0; i < n; i++) {
+        const slot = slots[i] || 'FLEX';
+        const wId = g.we.starters && g.we.starters[i], lId = g.le.starters && g.le.starters[i];
+        const wp = slotPts(g.we, i), lp = slotPts(g.le, i);
+        rows += `<div class="bx-row">
+            <div class="bx-side bx-w"><span class="bx-pl">${escHtml(pname(wId))}</span><span class="bx-pts">${pts(wp)}</span></div>
+            <div class="bx-slot">${escHtml(slotName(slot))}</div>
+            <div class="bx-side bx-l"><span class="bx-pts">${pts(lp)}</span><span class="bx-pl">${escHtml(pname(lId))}</span></div>
+          </div>`;
+      }
+      return `
+        <button class="sl-back" data-back>‹ Back</button>
+        <div class="bx-head">
+          <div class="bx-team"><div class="bx-name">@${escHtml(g.winner)}</div><div class="bx-total">${pts(g.ws)}</div></div>
+          <div class="bx-vs">${escHtml(g.season)}<br>Wk ${g.week}</div>
+          <div class="bx-team"><div class="bx-name">@${escHtml(g.loser)}</div><div class="bx-total">${pts(g.ls)}</div></div>
+        </div>
+        <div class="bx-rows">${rows}</div>`;
+    };
+    const rivalryHtml = pair => {
+      const a = pair.a, b = pair.b;
+      const games = (stats.allGames || [])
+        .filter(g => (g.winner === a && g.loser === b) || (g.winner === b && g.loser === a))
+        .sort((x, y) => String(y.season).localeCompare(String(x.season)) || y.week - x.week);
+      const rows = games.map(g => {
+        const aWon = g.winner === a;
+        const aPts = aWon ? g.ws : g.ls, bPts = aWon ? g.ls : g.ws;
+        return `<div class="hist-row">
+            <span class="hist-when">${escHtml(g.season)} · Wk ${g.week}</span>
+            <span class="hist-score"><b class="${aWon ? 'hist-win' : ''}">${pts(aPts)}</b> – <b class="${!aWon ? 'hist-win' : ''}">${pts(bPts)}</b></span>
+          </div>`;
+      }).join('');
+      const lead = pair.aw === pair.bw ? `Even ${pair.aw}–${pair.bw}` : (pair.aw > pair.bw ? `@${escHtml(a)} leads ${pair.aw}–${pair.bw}` : `@${escHtml(b)} leads ${pair.bw}–${pair.aw}`);
+      return `
+        <button class="sl-back" data-back>‹ Back</button>
+        <div class="bx-head">
+          <div class="bx-team"><div class="bx-name">@${escHtml(a)}</div></div>
+          <div class="bx-vs">vs</div>
+          <div class="bx-team"><div class="bx-name">@${escHtml(b)}</div></div>
+        </div>
+        <div class="hist-sub">${lead} · ${games.length} meeting${games.length === 1 ? '' : 's'}</div>
+        <div class="hist-list">${rows}</div>`;
     };
 
     let slOverlay = document.getElementById('stat-overlay');
@@ -2237,17 +2350,34 @@
     }
     const slContent = slOverlay.querySelector('.ro-content');
     let slLastFocus = null;
+    let currentType = null;
     function closeSl() { slOverlay.hidden = true; document.body.style.overflow = ''; if (slLastFocus) slLastFocus.focus(); }
+    function setContent(html) { slContent.innerHTML = html; slContent.scrollTop = 0; }
+    function showList(type) { setContent(`<div class="sl-head">${STAT_TITLE[type] || ''}</div><div class="sl-list">${statListHtml(type)}</div>`); }
+    function showDetail(type, idx) {
+      if (type === 'rivalry') { const p = stats.lists.rivalry[idx]; if (p) setContent(rivalryHtml(p)); }
+      else { const g = stats.lists[type][idx]; if (g) setContent(boxScoreHtml(g)); }
+    }
     function openStat(type) {
-      const rowsHtml = statRows(type);
-      if (!rowsHtml) return;
-      slContent.innerHTML = `<div class="sl-head">${STAT_TITLE[type] || ''}</div><div class="sl-list">${rowsHtml}</div>`;
+      if (!statListHtml(type)) return;
+      currentType = type;
+      showList(type);
       slLastFocus = document.activeElement;
       slOverlay.hidden = false;
       document.body.style.overflow = 'hidden';
-      slOverlay.querySelector('.ro-dialog').scrollTop = 0;
       slOverlay.querySelector('.ro-close').focus();
     }
+    const activateRow = el => {
+      if (el.closest('[data-back]')) { showList(currentType); return; }
+      const row = el.closest('.sl-row.tappable');
+      if (row) showDetail(currentType, +row.dataset.idx);
+    };
+    slContent.addEventListener('click', e => activateRow(e.target));
+    slContent.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.target.closest('[data-back], .sl-row.tappable')) { e.preventDefault(); activateRow(e.target); }
+    });
+
     const cardsWrap = document.querySelector('#all-time .stat-cards');
     if (cardsWrap) {
       const openFromCard = c => { const type = c.getAttribute('data-stat'); if (type) openStat(type); };
