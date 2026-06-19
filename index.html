@@ -481,7 +481,7 @@
 
     /* Smooth anchor scrolling with offset so headings aren't flush to the top */
     html { scroll-behavior: smooth; }
-    #season-preview, #trophy-case, #all-time, #past-seasons { scroll-margin-top: 64px; }
+    #season-preview, #trophy-case, #all-time, #past-seasons, #spencer { scroll-margin-top: 64px; }
 
     .season-card {
       background:
@@ -1202,6 +1202,85 @@
     .hist-score { font-family: var(--font-display); font-size: 0.95rem; color: #c8b89a; white-space: nowrap; }
     .hist-score .hist-win { color: var(--gold); }
 
+    /* ── SPENCER SLANDER ── */
+    #spencer { max-width: 900px; margin: 0 auto; padding: 60px 20px 10px; }
+    .slander-stage {
+      margin-top: 26px;
+      background:
+        repeating-linear-gradient(91deg, transparent 0px, transparent 4px, rgba(92,45,16,0.07) 4px, rgba(92,45,16,0.07) 5px),
+        linear-gradient(160deg, #2a1208 0%, #1a0c04 100%);
+      border: 3px solid var(--wood-highlight);
+      border-radius: 6px;
+      box-shadow: 0 0 0 1px #3a1a08, 0 8px 28px rgba(0,0,0,0.6);
+      padding: 30px 24px 24px;
+      text-align: center;
+    }
+    .slander-quote {
+      font-family: var(--font-body);
+      font-style: italic;
+      font-size: clamp(1.05rem, 3.5vw, 1.5rem);
+      line-height: 1.5;
+      color: var(--gold-light);
+      margin: 0 auto 20px;
+      max-width: 640px;
+      min-height: 2.2em;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
+    .slander-quote.zap { animation: slander-zap 0.32s ease; }
+    @keyframes slander-zap { 0% { transform: scale(0.96); opacity: 0.3; } 60% { transform: scale(1.02); } 100% { transform: scale(1); opacity: 1; } }
+    .slander-btn {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: 0.03em;
+      color: #1e0d05;
+      background: linear-gradient(180deg, var(--gold-light), var(--gold) 55%, var(--gold-dark));
+      border: 2px solid #a0750f;
+      border-radius: 8px;
+      padding: 11px 22px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+      transition: transform 0.12s, filter 0.15s;
+    }
+    .slander-btn:hover { filter: brightness(1.08); }
+    .slander-btn:active { transform: translateY(2px); }
+    .slander-meter {
+      margin-top: 16px;
+      font-family: var(--font-display);
+      font-size: 0.66rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .slander-meter span { color: var(--gold); font-size: 0.95rem; }
+    .slander-hits { margin-top: 30px; }
+    .slander-hits-title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 16px;
+      letter-spacing: 0.04em;
+    }
+    .slander-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .slander-item {
+      background: linear-gradient(160deg, #20100a 0%, #160a03 100%);
+      border: 1px solid #5c2d10;
+      border-left: 3px solid var(--gold-dark);
+      border-radius: 4px;
+      padding: 12px 14px;
+      font-family: var(--font-body);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      color: #d8c8a8;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 600px) {
+      #spencer { padding: 40px 12px 10px; }
+      .slander-stage { padding: 22px 14px 18px; }
+      .slander-list { grid-template-columns: 1fr; }
+    }
+
     /* Manager profile modal */
     .tc-row { cursor: pointer; }
     .cobweb-name { cursor: pointer; border-bottom: 1px dotted rgba(154,128,96,0.5); }
@@ -1378,7 +1457,8 @@
       color: var(--gold);
       white-space: nowrap;
     }
-    .mn-links { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .mn-links { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .mn-links::-webkit-scrollbar { display: none; }
     #mini-nav .navlink {
       padding: 6px 12px;
       margin: 0;
@@ -1388,6 +1468,7 @@
       font-size: 0.74rem;
       box-shadow: none;
       min-height: 0;
+      white-space: nowrap;
       transition: color 0.15s, background 0.15s;
     }
     #mini-nav .navlink:hover { background: rgba(245,200,66,0.08); }
@@ -1426,10 +1507,11 @@
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (max-width: 600px) {
-      .mn-brand { font-size: 1.1rem; }
+      .mn-brand { font-size: 1.1rem; flex-shrink: 0; }
       .mn-brand-text { display: none; } /* show just 👀 on phones — never truncate */
-      #mini-nav .navlink { padding: 6px 9px; font-size: 0.7rem; }
-      #mini-nav { padding: 7px 10px; }
+      #mini-nav .navlink { padding: 6px 7px; font-size: 0.66rem; }
+      #mini-nav { padding: 7px 8px; gap: 6px; }
+      .mn-share { flex-shrink: 0; }
     }
 
     #scroll-progress {
@@ -1541,8 +1623,9 @@
     <a class="navlink" href="#trophy-case">Trophy</a>
     <a class="navlink" href="#all-time">Records</a>
     <a class="navlink" href="#past-seasons">Seasons</a>
-    <button id="share-btn" class="mn-share" title="Copy link" aria-label="Copy link to this page">🔗</button>
+    <a class="navlink" href="#spencer">Slander</a>
   </nav>
+  <button id="share-btn" class="mn-share" title="Copy link" aria-label="Copy link to this page">🔗</button>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -1556,6 +1639,7 @@
     <a class="navlink" href="#trophy-case">Trophy Case</a>
     <a class="navlink" href="#all-time">Records</a>
     <a class="navlink" href="#past-seasons">Past Seasons</a>
+    <a class="navlink" href="#spencer">Spencer Slander</a>
   </nav>
 </div>
 
@@ -1578,6 +1662,20 @@
   <div class="section-title">📜 Past Seasons</div>
   <div class="section-sub">Every chapter of the dynasty, immortalized</div>
   <div id="seasons"></div>
+</section>
+
+<section id="spencer">
+  <div class="section-title">🗑️ Spencer Slander</div>
+  <div class="section-sub">A dedicated shrine to the league's most reliable source of content</div>
+  <div class="slander-stage">
+    <blockquote id="slander-quote" class="slander-quote">…</blockquote>
+    <button id="slander-btn" class="slander-btn">🔥 Hit me with another</button>
+    <div class="slander-meter">Burns served: <span id="slander-count">0</span></div>
+  </div>
+  <div class="slander-hits">
+    <div class="slander-hits-title">📜 The Greatest Hits</div>
+    <div id="slander-list" class="slander-list"></div>
+  </div>
 </section>
 
 <button id="back-to-top" aria-label="Back to top" title="Back to top">↑</button>
@@ -3125,10 +3223,53 @@
         }
       });
     }, { rootMargin: '-20% 0px -70% 0px' });
-    ['season-preview', 'trophy-case', 'all-time', 'past-seasons'].forEach(id => {
+    ['season-preview', 'trophy-case', 'all-time', 'past-seasons', 'spencer'].forEach(id => {
       const el = document.getElementById(id);
       if (el) obs.observe(el);
     });
+  })();
+
+  // ── Spencer Slander: a rotating wall of (loving) disrespect ──
+  (function spencerSlander() {
+    // Swap in your own zingers here — keep 'em playful.
+    const ZINGERS = [
+      "Spencer's draft strategy is closing his eyes and clicking the highest-ranked guy already on someone else's team.",
+      "Spencer set his optimal lineup once. It was an accident and he's been chasing that high ever since.",
+      "Spencer's trophy case is just a really well-lit empty shelf.",
+      "Autodraft has a better all-time record than Spencer.",
+      "Spencer thinks 'handcuff' is a defensive scheme.",
+      "Spencer's team motto: 'There's always next year.' Said every year. Since the beginning of time.",
+      "Spencer's bench outscores his starters so often it should get its own playoff seed.",
+      "Spencer once started a player on bye. He maintains it was 'a calculated risk.'",
+      "Spencer plays not to win, and honestly? Elite at it. Hall of Fame floor.",
+      "Spencer's idea of 'streaming a defense' is forgetting to set his lineup.",
+      "Spencer reads waiver-wire articles the way other people read fortune cookies — too late and for no reason.",
+      "Spencer's championship window is drawn on, with a marker, by hand.",
+      "Spencer traded a 1st for 'upside' and the upside retired.",
+      "Spencer's group-chat trash talk has a better completion percentage than his QBs.",
+      "Spencer scouts players exclusively by jersey color.",
+    ];
+
+    const quote = document.getElementById('slander-quote');
+    const btn = document.getElementById('slander-btn');
+    const countEl = document.getElementById('slander-count');
+    const list = document.getElementById('slander-list');
+    if (!quote || !btn || !list) return;
+
+    let count = 0;
+    try { count = parseInt(localStorage.getItem('slanderCount') || '0', 10) || 0; } catch (e) {}
+    countEl.textContent = count;
+
+    let last = -1;
+    const fresh = () => { let i; do { i = Math.floor(Math.random() * ZINGERS.length); } while (i === last && ZINGERS.length > 1); last = i; return ZINGERS[i]; };
+    const show = (text, bump) => {
+      quote.textContent = '“' + text + '”';
+      quote.classList.remove('zap'); void quote.offsetWidth; quote.classList.add('zap');
+      if (bump) { count++; countEl.textContent = count; try { localStorage.setItem('slanderCount', count); } catch (e) {} }
+    };
+    show(fresh(), false); // initial burn doesn't count
+    btn.addEventListener('click', () => show(fresh(), true));
+    list.innerHTML = ZINGERS.map(z => `<div class="slander-item">${escHtml(z)}</div>`).join('');
   })();
 
   // ── Bells & whistles: progress bar, back-to-top, scroll reveal, count-ups, confetti ──
